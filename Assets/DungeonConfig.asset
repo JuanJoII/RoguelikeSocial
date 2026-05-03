@@ -17,9 +17,9 @@ MonoBehaviour:
   roomSize: {x: 20, y: 20}
   moduleSize: 2
   wallHeight: 3
-  decorationDensity: 0.15
+  decorationDensity: 0.1192
   difficultyLevel: 1
-  dungeonSeed: 12345
-  useRandomSeed: 0
+  dungeonSeed: 1256412500
+  useRandomSeed: 1
   drawDebugGizmos: 1
   logGenerationStats: 1

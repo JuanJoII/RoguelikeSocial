@@ -1,30 +1,50 @@
 using UnityEngine;
 
+/// <summary>
+/// Configuración BASE del dungeon: grilla, prefabs y semilla.
+/// Los parámetros que cambian por dificultad (salas, pasillos) están en DungeonDifficultyConfig.
+/// 
+/// Crear via: Assets > Create > Dungeon > Config
+/// </summary>
 [CreateAssetMenu(fileName = "DungeonConfig", menuName = "Dungeon/Config")]
 public class DungeonConfig : ScriptableObject
 {
-    [Header("Layout")]
-    public int minRoomsPerDungeon = 5;
-    public int maxRoomsPerDungeon = 15;
-    public Vector2Int roomSize = new Vector2Int(20, 20);
-    
-    [Header("Architecture")]
-    public float moduleSize = 2f; // Tamaño de cada módulo de pared
-    public int wallHeight = 3;    // Altura de paredes en unidades
-    
-    [Header("Decoration")]
-    [Range(0.05f, 0.3f)]
-    public float decorationDensity = 0.15f; // 15% de la sala llena
-    
-    [Header("Difficulty")]
-    [Range(1, 5)]
-    public int difficultyLevel = 1;
-    
-    [Header("Seed & Reproducibility")]
-    public int dungeonSeed = 12345;
-    public bool useRandomSeed = false;
-    
+    // ─────────────────────────────────────────────
+    // GRILLA (fija para todo el juego)
+    // ─────────────────────────────────────────────
+    [Header("Grid — Invariable por dificultad")]
+    [Tooltip("Tamaño de cada celda en unidades Unity. TODO el sistema usa este valor.")]
+    public int cellSize = 5;
+
+    [Tooltip("Ancho del mapa en celdas")]
+    public int gridWidth = 80;
+
+    [Tooltip("Alto del mapa en celdas")]
+    public int gridHeight = 80;
+
+    // ─────────────────────────────────────────────
+    // PREFABS
+    // ─────────────────────────────────────────────
+    [Header("Prefabs")]
+    [Tooltip("Prefab de suelo. Se instancia en celdas Room/Corridor.")]
+    public GameObject floorPrefab;
+
+    [Tooltip("Prefab de pared. Se instancia en celdas Empty adyacentes al suelo.")]
+    public GameObject wallPrefab;
+
+    // ─────────────────────────────────────────────
+    // SEMILLA
+    // ─────────────────────────────────────────────
+    [Header("Seed")]
+    public int seed = 12345;
+
+    [Tooltip("Si está activo, genera una semilla distinta en cada generación.")]
+    public bool useRandomSeed = true;
+
+    // ─────────────────────────────────────────────
+    // DEBUG
+    // ─────────────────────────────────────────────
     [Header("Debug")]
-    public bool drawDebugGizmos = true;
-    public bool logGenerationStats = true;
+    public bool drawGizmos = true;
+    public bool logStats   = true;
 }
