@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c2d25c2ab7dce84ab5c0097963396a1, type: 3}
+  m_Name: Habitacion1
+  m_EditorClassIdentifier: Assembly-CSharp::RoomConfigSO
+  totalEnemiesRequired: 200
+  groundWaveConfigs:
+  - {fileID: 11400000, guid: 6f0645ac50fa61b44942b4b6719233ec, type: 2}
+  groundWaveCount: 3
+  airWaveConfigs:
+  - {fileID: 11400000, guid: 784c5fc661a99844984716a81e16e81f, type: 2}
+  airWaveCount: 8
+  timeBetweenWaves: 10
+  isBossRoom: 0
+  bossRoomEnemyCap: 15

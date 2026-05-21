@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8211a7237ee01eb44ac16186d39d8216, type: 3}
+  m_Name: CommonProjectile
+  m_EditorClassIdentifier: Assembly-CSharp::ProjectileConfig
+  damage: 1
+  speed: 10
+  maxRange: 40
+  hitVFX: {fileID: 11400000, guid: 1893eff872330724e8418c07dc85fa73, type: 2}
+  wrongTypeVFX: {fileID: 11400000, guid: dcc4d1b4016bcce46bb6ac4468209aeb, type: 2}
+  hitSound: {fileID: 11400000, guid: 1f982f02a664d1f449756e9fb5331588, type: 2}
