@@ -115,11 +115,14 @@ public class ObjectPool : MonoBehaviour
     /// Solicita un proyectil del tipo indicado.
     /// El WeaponSystem lo posiciona e inicializa después de llamar esto.
     /// </summary>
+
     public GameObject GetProjectile(EnemyType targetType)
     {
         return targetType == EnemyType.Ground
-            ? GetFromQueue(_groundProjectiles, groundProjectilePool, _projectileContainer, "GroundProjectile")
-            : GetFromQueue(_airProjectiles,    airProjectilePool,    _projectileContainer, "AirProjectile");
+            ? GetFromQueue(_groundProjectiles, groundProjectilePool,
+                _projectileContainer, "GroundProjectile")
+            : GetFromQueue(_airProjectiles, airProjectilePool,
+                _projectileContainer, "AirProjectile");
     }
 
     /// <summary>
@@ -165,29 +168,54 @@ public class ObjectPool : MonoBehaviour
 
     // ── Lógica interna ────────────────────────────────────────────────────
 
-    private GameObject GetFromQueue(Queue<GameObject> queue, PoolConfig config,
-                                    Transform container, string label)
+private GameObject GetFromQueue(Queue<GameObject> queue, PoolConfig config,
+                                Transform container, string label)
+{
+    // Limpiamos referencias null y objetos que
+    // quedaron en estado zombie (activos pero en la cola)
+    while (queue.Count > 0)
     {
-        // Descartamos entradas null que puedan haber quedado
-        // por cambios de escena u otras razones
-        while (queue.Count > 0 && queue.Peek() == null)
-            queue.Dequeue();
+        GameObject candidate = queue.Peek();
 
-        if (queue.Count > 0)
+        if (candidate == null)
         {
-            GameObject obj = queue.Dequeue();
-            obj.SetActive(true);
-            return obj;
+            queue.Dequeue();
+            continue;
         }
 
-        // Pool vacío: instanciamos uno extra en lugar de fallar
-        // El warning te avisa para que aumentes initialSize
-        Debug.LogWarning($"[ObjectPool] Pool de {label} vacío. " +
-                         $"Considera aumentar initialSize (actual: {config.initialSize}). " +
-                         "Instanciando objeto extra.");
+        // Si el objeto está activo es un zombie — ya fue adquirido
+        // pero quedó en la cola por el bug de doble retorno.
+        // Lo removemos de la cola sin tocarlo.
+        if (candidate.activeInHierarchy)
+        {
+            queue.Dequeue();
+            Debug.LogWarning($"[ObjectPool] Objeto zombie detectado en pool {label}. " +
+                             "Fue ignorado. El fix de _inUse debería prevenir esto.");
+            continue;
+        }
 
-        GameObject extra = Instantiate(config.prefab, container);
-        extra.SetActive(true);
-        return extra;
+        // Objeto válido — lo adquirimos
+        queue.Dequeue();
+
+        // Acquire ANTES de SetActive para que _inUse sea true
+        // antes de que Unity procese física en el próximo frame
+        if (candidate.TryGetComponent<ProjectileBase>(out var proj))
+            proj.Acquire();
+
+        candidate.SetActive(true);
+        return candidate;
     }
+
+    // Pool vacío — instanciamos uno nuevo
+    Debug.LogWarning($"[ObjectPool] Pool de {label} vacío. " +
+                     $"Considera aumentar initialSize (actual: {config.initialSize}).");
+
+    GameObject extra = Instantiate(config.prefab, container);
+
+    if (extra.TryGetComponent<ProjectileBase>(out var newProj))
+        newProj.Acquire();
+
+    extra.SetActive(true);
+    return extra;
+}
 }

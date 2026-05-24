@@ -30,12 +30,26 @@ public class PlayerHealth : MonoBehaviour
     {
         _stateMachine = GetComponent<PlayerStateMachine>();
         CurrentLives = maxLives;
+        
+    }
+
+    private void Start()
+    {
+        // Inicializa los corazones del HUD con el maxLives configurado
+        // Lo hacemos en Start con Invoke para asegurar que UIManager ya existe
+        Invoke(nameof(InitializeUI), 0.1f);
+    }
+
+    private void InitializeUI()
+    {
+        UIManager.Instance?.InitializeHearts(maxLives);
     }
 
     public void TakeDamage(int amount)
     {
         if (_stateMachine.HasIFrames) return;
         if (_stateMachine.CurrentState == PlayerStateMachine.PlayerState.Dead) return;
+        if (_stateMachine.CurrentState == PlayerStateMachine.PlayerState.TakingDamage) return;
 
         CurrentLives = Mathf.Max(0, CurrentLives - amount);
         OnDamaged?.Invoke(CurrentLives, maxLives);
