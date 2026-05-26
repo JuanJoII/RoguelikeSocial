@@ -1454,7 +1454,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RoomContext
   roomIndex: 0
   possibleConfigs:
-  - {fileID: 11400000, guid: b15fbfe5bc909d34caa771e3dbd385c8, type: 2}
+  - {fileID: 11400000, guid: c3d9185c68354fa4393b9391e6c53c92, type: 2}
   useCameraBounds: 0
   boundsMin: {x: 0, y: 0}
   boundsMax: {x: 0, y: 0}

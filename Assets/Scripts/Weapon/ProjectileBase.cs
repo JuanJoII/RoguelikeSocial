@@ -69,37 +69,47 @@ public class ProjectileBase : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        // _inUse es la única verificación que importa aquí.
-        // Si es false, este proyectil ya fue retornado al pool
-        // y este callback es un residuo de física del frame anterior.
         if (!_inUse) return;
 
-        // Ignoramos colisiones con otros proyectiles
-        // (configura esto también en la Layer Collision Matrix)
+        // Ignoramos otros proyectiles
         if (other.TryGetComponent<ProjectileBase>(out _)) return;
 
-        // Si golpeamos algo que no es enemigo (pared, suelo, etc.)
-        if (!other.TryGetComponent<EnemyTypeIdentifier>(out var typeId))
+        // ¿Golpeamos un boss? Cualquier bala lo daña
+        if (other.TryGetComponent<BossBase>(out var boss))
         {
+            boss.TakeDamage(_config.damage);
+
+            if (_config.hitVFX != null)
+                VFXPool.Instance.PlayVFX(
+                    _config.hitVFX, transform.position, Quaternion.identity);
+            if (_config.hitSound != null)
+                AudioManager.Instance.PlaySFX(_config.hitSound, transform.position);
+
             ReturnToPool();
             return;
         }
 
-        // Enemigo del tipo correcto
+        // ¿Golpeamos un enemigo común?
+        if (!other.TryGetComponent<EnemyTypeIdentifier>(out var typeId))
+        {
+            // Pared u obstáculo — devolvemos al pool
+            ReturnToPool();
+            return;
+        }
+
         if (typeId.EnemyType == _targetType)
         {
             if (other.TryGetComponent<EnemyAI>(out var enemy))
                 enemy.TakeDamage(_config.damage);
 
             if (_config.hitVFX != null)
-                VFXPool.Instance.PlayVFX(_config.hitVFX, transform.position, Quaternion.identity);
-
+                VFXPool.Instance.PlayVFX(
+                    _config.hitVFX, transform.position, Quaternion.identity);
             if (_config.hitSound != null)
                 AudioManager.Instance.PlaySFX(_config.hitSound, transform.position);
         }
         else
         {
-            // Tipo incorrecto — feedback visual sin daño
             if (_config.wrongTypeVFX != null)
                 VFXPool.Instance.PlayVFX(
                     _config.wrongTypeVFX, transform.position, Quaternion.identity);
