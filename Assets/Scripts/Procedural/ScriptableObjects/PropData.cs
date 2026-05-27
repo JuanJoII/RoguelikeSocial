@@ -1,27 +1,29 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-public enum PropPlacementRule { AgainstWall, Center, Corner, Random }
+public enum PropPlacementRule
+{
+    AgainstWall,    // shelf, torsher, Cell
+    OnFurniture,    // velas, libros, botella — encima de table/shelf
+    Corner,         // barrels, box wood
+    FloorFree,      // chair, table, bags
+    FloorRare,      // chest, coins
+}
 
 [System.Serializable]
 public class PropData
 {
-    public string PropName;
-    public GameObject Prefab;
-    [Range(0.01f, 100f)] public float Weight;
+    public string      PropName;
+    public GameObject  Prefab;
     public PropPlacementRule PlacementRule;
-    public List<RoomType> AllowedRoomTypes; // vacío = todos
-    [Range(0f, 1f)] public float SpawnChance = 0.7f;
-}
+    [Range(0.01f, 100f)] public float Weight = 50f;
+    [Range(0f, 1f)]      public float SpawnChance = 0.7f;
 
-[CreateAssetMenu(menuName = "Dungeon/Prop Collection")]
-public class PropCollection : ScriptableObject
-{
-    public List<PropData> Props;
+    // Qué tipos de sala permiten este prop
+    // Lista vacía = todos los tipos
+    public List<RoomType> AllowedRooms = new();
 
-    public List<PropData> GetForRoomType(RoomType type)
-    {
-        return Props.FindAll(p =>
-            p.AllowedRoomTypes.Count == 0 || p.AllowedRoomTypes.Contains(type));
-    }
+    // Solo aparece si hay un mueble (table/shelf) cercano
+    // Solo relevante para OnFurniture
+    public bool RequiresFurnitureNearby = false;
 }

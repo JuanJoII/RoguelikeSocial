@@ -150,7 +150,7 @@ public class DungeonGenerator : MonoBehaviour
         // Socket resolver — solo si existe
         socketResolver?.ResolveAllSockets(rooms, grid);
 
-        // [5] Geometría — igual que antes
+        // [5] Geometría 
         archGen.BuildGeometry(grid, rooms);
 
         // [6] Spawning — solo si existen los componentes
@@ -161,7 +161,16 @@ public class DungeonGenerator : MonoBehaviour
             // TODO: conectar biome config
         }
 
-        // [7] Validación — igual que antes
+        if (propDecorator != null && config.currentBiome?.PropCollection != null)
+        {
+            foreach (var room in rooms)
+            {
+                if (room.RoomType == RoomType.Start) continue; // sala inicio sin decoración
+                propDecorator.DecorateRoom(room, config.currentBiome.PropCollection, grid, rng);
+            }
+        }
+
+        // [7] Validación — 
         lastValid = validator.ValidateAll(rooms, grid);
         if (!lastValid)
         {
