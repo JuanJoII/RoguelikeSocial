@@ -39,12 +39,18 @@ public class GameManager : MonoBehaviour
 
     private void OnEnable()
     {
-        PlayerHealth.OnPlayerDead += () => TransitionTo(GameState.PlayerDead);
+        PlayerHealth.OnPlayerDead += HandlePlayerDead;
     }
 
     private void OnDisable()
     {
-        PlayerHealth.OnPlayerDead -= () => TransitionTo(GameState.PlayerDead);
+        PlayerHealth.OnPlayerDead -= HandlePlayerDead;
+    }
+
+    private void HandlePlayerDead()
+    {
+        Time.timeScale = 1f;
+        TransitionTo(GameState.PlayerDead);
     }
 
     public void TransitionTo(GameState newState)

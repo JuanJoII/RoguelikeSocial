@@ -102,7 +102,6 @@ public class WeaponSystem : MonoBehaviour
 
     private Transform FindBestTarget()
     {
-        // Paso 1: todos los colliders en el radio de detección
         Collider[] colliders = Physics.OverlapSphere(
             transform.position, detectionRadius, enemyLayerMask);
 
@@ -113,21 +112,31 @@ public class WeaponSystem : MonoBehaviour
 
         foreach (Collider col in colliders)
         {
-            // Paso 2: ¿está dentro del cono?
+            // Verificamos si está dentro del cono
             Vector3 dirToEnemy = (col.transform.position - transform.position).normalized;
             float angle = Vector3.Angle(transform.forward, dirToEnemy);
-
             if (angle > coneAngle * 0.5f) continue;
 
-            // Paso 3: ¿es del tipo correcto para la bala activa?
+            // ¿Es un boss? Cualquier bala lo detecta como target válido
+            if (col.TryGetComponent<BossBase>(out _))
+            {
+                float distance = Vector3.Distance(transform.position, col.transform.position);
+                if (distance < closestDistance)
+                {
+                    closestDistance = distance;
+                    bestTarget = col.transform;
+                }
+                continue;
+            }
+
+            // ¿Es un enemigo común del tipo correcto?
             if (!col.TryGetComponent<EnemyTypeIdentifier>(out var typeId)) continue;
             if (typeId.EnemyType != _activeBulletType) continue;
 
-            // Paso 4: ¿es el más cercano hasta ahora?
-            float distance = Vector3.Distance(transform.position, col.transform.position);
-            if (distance < closestDistance)
+            float dist = Vector3.Distance(transform.position, col.transform.position);
+            if (dist < closestDistance)
             {
-                closestDistance = distance;
+                closestDistance = dist;
                 bestTarget = col.transform;
             }
         }

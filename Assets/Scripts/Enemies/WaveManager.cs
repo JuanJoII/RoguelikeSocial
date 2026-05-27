@@ -137,10 +137,43 @@ public class WaveManager : MonoBehaviour
 
     // ── Sala de boss ──────────────────────────────────────────────────────
 
+    private BossBase _activeBoss;
+
     private void StartBossRoom()
     {
         _bossRoomActive = true;
+
+        // Spawneamos el boss antes de iniciar las oleadas
+        SpawnBoss();
+
         _bossRoomRoutine = StartCoroutine(BossRoomRoutine());
+    }
+
+    private void SpawnBoss()
+    {
+        if (_config.bossPrefab == null)
+        {
+            Debug.LogError("[WaveManager] isBossRoom es true pero bossPrefab no está asignado " +
+                           $"en {_config.name}.");
+            return;
+        }
+
+        // Spawneamos en el centro de la sala más el offset configurado
+        // El centro lo calculamos desde el WaveManager transform,
+        // que debe estar en el centro de la sala
+        Vector3 spawnPosition = transform.position + _config.bossSpawnOffset;
+
+        GameObject bossObj = Instantiate(_config.bossPrefab, spawnPosition, Quaternion.identity);
+
+        if (!bossObj.TryGetComponent<BossBase>(out _activeBoss))
+        {
+            Debug.LogError("[WaveManager] El bossPrefab no tiene un componente " +
+                           "que herede de BossBase.");
+            Destroy(bossObj);
+            return;
+        }
+
+        _activeBoss.Initialize(_player);
     }
 
     private IEnumerator BossRoomRoutine()

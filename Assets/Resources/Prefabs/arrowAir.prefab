@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 2065540356756616647}
   - component: {fileID: 7417175960800010555}
   - component: {fileID: 2881080748871575360}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: arrowAir
   m_TagString: Untagged
   m_Icon: {fileID: 0}

@@ -90,4 +90,12 @@ public class RunManager : MonoBehaviour
             DataManager.Instance.UnlockNextLevel(CurrentLevel);
         }
     }
+    public void RetryCurrentLevel()
+    {
+        // Reinicia el run desde la primera sala del nivel actual
+        StartRun(CurrentLevel);
+
+        // Carga la escena del nivel — ajusta el nombre según tu proyecto
+        UnityEngine.SceneManagement.SceneManager.LoadScene($"Level_{CurrentLevel:D2}");
+    }
 }

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Wave1
   m_EditorClassIdentifier: Assembly-CSharp::WaveConfigSO
   enemyData: {fileID: 11400000, guid: d302ab8a8a623154e84bfa12fd69104e, type: 2}
-  minEnemies: 5
-  maxEnemies: 10
+  minEnemies: 10
+  maxEnemies: 20
   spawnInterval: 0.15
   portalDelay: 1.2

@@ -3,56 +3,65 @@ using UnityEngine;
 /// <summary>
 /// Comportamiento de un proyectil individual.
 ///
-/// CICLO DE VIDA:
-/// 1. WeaponSystem llama Initialize() al sacarlo del pool
-/// 2. El proyectil se mueve en Update
-/// 3. Al colisionar o exceder el rango, se devuelve al pool
+/// FIX DE POOL:
+/// _inUse es el flag de custodia. Se activa cuando el pool entrega
+/// el proyectil y se desactiva cuando se devuelve. Todos los callbacks
+/// de física lo verifican primero. Esto evita el bug de doble retorno
+/// causado por callbacks de física retrasados de Unity.
 ///
-/// DAÑO:
-/// Solo aplica daño si el enemigo es del tipo correcto.
-/// Si no lo es, reproduce el VFX de bala incorrecta y se devuelve
-/// al pool sin hacer daño — feedback claro para el jugador.
-///
-/// IMPORTANTE — EnemyTypeIdentifier:
-/// Para que el proyectil sepa el tipo de un enemigo, ese enemigo
-/// debe tener el componente EnemyTypeIdentifier en su collider.
-/// Lo implementamos cuando hagamos el EnemyAI.
+/// La distinción entre _inUse e _initialized es intencional:
+/// _initialized = el proyectil tiene config válida y puede moverse
+/// _inUse = el proyectil está bajo custodia del WeaponSystem, no del pool
 /// </summary>
 public class ProjectileBase : MonoBehaviour
 {
     private ProjectileConfig _config;
     private EnemyType _targetType;
     private Vector3 _spawnPosition;
+
+    // Flag de inicialización — controla si el proyectil se mueve
     private bool _initialized;
 
-    private void OnEnable()
+    // Flag de custodia — controla si el proyectil puede ser retornado
+    // Se setea desde el ObjectPool, no desde Initialize
+    private bool _inUse;
+
+    private void OnDisable()
     {
-        // Al salir del pool guardamos la posición de origen para
-        // calcular la distancia recorrida
-        _spawnPosition = transform.position;
+        // Cuando el pool desactiva el objeto, nos aseguramos
+        // de que el estado quede limpio para la próxima vez
         _initialized = false;
+        _inUse = false;
     }
 
     /// <summary>
-    /// Llamado por WeaponSystem inmediatamente después de sacar del pool.
-    /// Sin esta llamada el proyectil no se mueve ni hace daño.
+    /// Llamado por ObjectPool justo ANTES de entregar el proyectil.
+    /// Marca el proyectil como bajo custodia del WeaponSystem.
+    /// Debe llamarse antes de Initialize para que los callbacks
+    /// de física no puedan retornarlo mientras se configura.
+    /// </summary>
+    public void Acquire()
+    {
+        _inUse = true;
+    }
+
+    /// <summary>
+    /// Llamado por WeaponSystem después de posicionar el proyectil.
     /// </summary>
     public void Initialize(ProjectileConfig config, EnemyType targetType)
     {
         _config = config;
         _targetType = targetType;
+        _spawnPosition = transform.position;
         _initialized = true;
     }
 
     private void Update()
     {
-        if (!_initialized) return;
+        if (!_initialized || !_inUse) return;
 
-        // Movimiento: siempre hacia adelante en la dirección que fue orientado
         transform.position += transform.forward * _config.speed * Time.deltaTime;
 
-        // Rango máximo: si el proyectil viajó demasiado, lo devolvemos al pool
-        // Esto evita que proyectiles perdidos vivan indefinidamente
         float distanceTraveled = Vector3.Distance(_spawnPosition, transform.position);
         if (distanceTraveled >= _config.maxRange)
             ReturnToPool();
@@ -60,12 +69,30 @@ public class ProjectileBase : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (!_initialized) return;
+        if (!_inUse) return;
 
-        // Si golpeamos algo que no es enemigo (pared, suelo, obstáculo)
-        // simplemente nos devolvemos al pool sin hacer daño
+        // Ignoramos otros proyectiles
+        if (other.TryGetComponent<ProjectileBase>(out _)) return;
+
+        // ¿Golpeamos un boss? Cualquier bala lo daña
+        if (other.TryGetComponent<BossBase>(out var boss))
+        {
+            boss.TakeDamage(_config.damage);
+
+            if (_config.hitVFX != null)
+                VFXPool.Instance.PlayVFX(
+                    _config.hitVFX, transform.position, Quaternion.identity);
+            if (_config.hitSound != null)
+                AudioManager.Instance.PlaySFX(_config.hitSound, transform.position);
+
+            ReturnToPool();
+            return;
+        }
+
+        // ¿Golpeamos un enemigo común?
         if (!other.TryGetComponent<EnemyTypeIdentifier>(out var typeId))
         {
+            // Pared u obstáculo — devolvemos al pool
             ReturnToPool();
             return;
         }
@@ -75,12 +102,17 @@ public class ProjectileBase : MonoBehaviour
             if (other.TryGetComponent<EnemyAI>(out var enemy))
                 enemy.TakeDamage(_config.damage);
 
-            VFXPool.Instance.PlayVFX(_config.hitVFX, transform.position, Quaternion.identity);
-            AudioManager.Instance.PlaySFX(_config.hitSound, transform.position);
+            if (_config.hitVFX != null)
+                VFXPool.Instance.PlayVFX(
+                    _config.hitVFX, transform.position, Quaternion.identity);
+            if (_config.hitSound != null)
+                AudioManager.Instance.PlaySFX(_config.hitSound, transform.position);
         }
         else
         {
-            VFXPool.Instance.PlayVFX(_config.wrongTypeVFX, transform.position, Quaternion.identity);
+            if (_config.wrongTypeVFX != null)
+                VFXPool.Instance.PlayVFX(
+                    _config.wrongTypeVFX, transform.position, Quaternion.identity);
         }
 
         ReturnToPool();
@@ -88,7 +120,13 @@ public class ProjectileBase : MonoBehaviour
 
     private void ReturnToPool()
     {
+        // Doble verificación — por si acaso dos callbacks
+        // intentan retornar en el mismo frame
+        if (!_inUse) return;
+
+        _inUse = false;
         _initialized = false;
+
         ObjectPool.Instance.ReturnProjectile(gameObject, _targetType);
     }
 }

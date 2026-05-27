@@ -12,10 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8c2d25c2ab7dce84ab5c0097963396a1, type: 3}
   m_Name: Habitacion1
   m_EditorClassIdentifier: Assembly-CSharp::RoomConfigSO
-  totalEnemiesRequired: 200
+  totalEnemiesRequired: 300
   groundWaveConfigs:
   - {fileID: 11400000, guid: 6f0645ac50fa61b44942b4b6719233ec, type: 2}
-  groundWaveCount: 3
+  groundWaveCount: 5
   airWaveConfigs:
   - {fileID: 11400000, guid: 784c5fc661a99844984716a81e16e81f, type: 2}
   airWaveCount: 8

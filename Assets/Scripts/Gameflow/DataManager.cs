@@ -85,4 +85,36 @@ public class DataManager : MonoBehaviour
         // DatabaseBridge.Instance.UnlockLevel(json);
         Debug.Log($"[DataManager] Desbloqueando nivel {nextLevel}");
     }
+    /// <summary>
+    /// Descarga el progreso del jugador actual.
+    /// El callback recibe username, totalScore y maxUnlockedLevel.
+    /// </summary>
+    public void FetchPlayerProgress(System.Action<string, int, int> onComplete)
+    {
+        // Tu amigo implementa la llamada a Firebase aquí.
+        // Por ahora un placeholder para que compile:
+        Debug.Log("[DataManager] FetchPlayerProgress — conectar con Firebase.");
+
+        // Simulación para desarrollo:
+        onComplete?.Invoke("Jugador01", 4500, 2);
+    }
+
+    /// <summary>
+    /// Descarga el ranking global ordenado por totalScore.
+    /// El callback recibe la lista de entradas.
+    /// </summary>
+    public void FetchRanking(System.Action<System.Collections.Generic.List<RankingPanel.RankingEntry>> onComplete)
+    {
+        Debug.Log("[DataManager] FetchRanking — conectar con Firebase.");
+
+        // Simulación para desarrollo:
+        var fakeData = new System.Collections.Generic.List<RankingPanel.RankingEntry>
+        {
+            new RankingPanel.RankingEntry { username = "Jugador01", totalScore = 8200, maxUnlockedLevel = 3 },
+            new RankingPanel.RankingEntry { username = "Jugador02", totalScore = 6100, maxUnlockedLevel = 2 },
+            new RankingPanel.RankingEntry { username = "Jugador03", totalScore = 3400, maxUnlockedLevel = 1 }
+        };
+
+        onComplete?.Invoke(fakeData);
+    }
 }

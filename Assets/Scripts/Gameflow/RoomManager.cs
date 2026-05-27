@@ -52,14 +52,19 @@ public class RoomManager : MonoBehaviour
     {
         EnemyAI.OnEnemyDied += HandleEnemyDied;
         PlayerHealth.OnPlayerDead += HandlePlayerDead;
+        BossBase.OnBossDead  += HandleBossDefeated; 
     }
 
     private void OnDisable()
     {
         EnemyAI.OnEnemyDied -= HandleEnemyDied;
         PlayerHealth.OnPlayerDead -= HandlePlayerDead;
+        BossBase.OnBossDead  -= HandleBossDefeated;
     }
-
+    private void HandleBossDefeated(BossBase boss)
+    {
+        OnBossDefeated();
+    }
     /// <summary>
     /// Llamado por RoomEntrance cuando el jugador cruza el umbral.
     /// Es el punto de entrada de toda la lógica de sala.

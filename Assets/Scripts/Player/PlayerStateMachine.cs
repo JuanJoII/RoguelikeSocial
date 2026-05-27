@@ -29,7 +29,7 @@ public class PlayerStateMachine : MonoBehaviour
 
     [Header("Invulnerabilidad post-daño")]
     [Tooltip("Segundos de invulnerabilidad al volver de TakingDamage a Moving")]
-    [SerializeField] private float postDamageInvulnerabilityTime = 0.8f;
+    [SerializeField] private float postDamageInvulnerabilityTime = 5f;
 
     private bool _postDamageInvulnerable;
     private Coroutine _invulnerabilityCoroutine;
@@ -74,12 +74,12 @@ public class PlayerStateMachine : MonoBehaviour
             // Desde Dashing — i-frames bloquean daño
             (PlayerState.Dashing, PlayerState.Moving)       => true,
             (PlayerState.Dashing, PlayerState.TakingDamage) => false, // i-frames activos
-            (PlayerState.Dashing, PlayerState.Dead)          => true,  // daño letal sí aplica
+            (PlayerState.Dashing, PlayerState.Dead)          => false,  // daño letal sí aplica
 
             // Desde TakingDamage — debe terminar la animación antes de actuar
             (PlayerState.TakingDamage, PlayerState.Moving)   => true,
             (PlayerState.TakingDamage, PlayerState.Dashing)  => false, // debe esperar
-            (PlayerState.TakingDamage, PlayerState.Dead)      => true,
+            (PlayerState.TakingDamage, PlayerState.Dead)      => false,
 
             // Dead es terminal — no hay salida
             (PlayerState.Dead, _) => false,
