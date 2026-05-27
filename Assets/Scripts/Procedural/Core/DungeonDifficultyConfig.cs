@@ -18,23 +18,23 @@ public class DungeonDifficultyConfig : ScriptableObject
     // ─────────────────────────────────────────────
     [Header("Salas — Cantidad")]
     [Tooltip("Cantidad mínima de salas generadas")]
-    public int minRooms = 6;
+    public int minRooms = 5;
 
     [Tooltip("Cantidad máxima de salas generadas")]
     public int maxRooms = 10;
 
     [Header("Salas — Tamaño (en celdas)")]
     [Tooltip("Ancho mínimo de sala en celdas")]
-    public int minRoomWidth = 3;
+    public int minRoomWidth = 12;
 
     [Tooltip("Ancho máximo de sala en celdas")]
-    public int maxRoomWidth = 6;
+    public int maxRoomWidth = 28;
 
     [Tooltip("Alto mínimo de sala en celdas")]
-    public int minRoomHeight = 3;
+    public int minRoomHeight = 12;
 
     [Tooltip("Alto máximo de sala en celdas")]
-    public int maxRoomHeight = 6;
+    public int maxRoomHeight = 28;
 
     [Header("Salas — Colocación")]
     [Tooltip("Separación mínima entre salas en celdas (0 = pegadas, ≥2 = con espacio)")]
@@ -60,6 +60,16 @@ public class DungeonDifficultyConfig : ScriptableObject
     // ─────────────────────────────────────────────
     // FÁBRICA: Presets predefinidos
     // ─────────────────────────────────────────────
+
+    [Header("Graph Generation")]
+    public int   minCombatRooms    = 3;
+    public int   maxCombatRooms    = 6;
+    public float treasureRoomChance = 0.7f;
+    public float eliteRoomChance    = 0.5f;
+
+    [Header("Spawning")]
+    public float baseThreatBudget  = 80f;
+    public float depthScaling      = 0.15f;
 
     /// <summary>
     /// Devuelve un preset de dificultad sin necesidad de un asset.

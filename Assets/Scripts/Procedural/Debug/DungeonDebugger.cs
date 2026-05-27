@@ -1,111 +1,131 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 
-/// <summary>
-/// Visualiza el dungeon en el Editor de Unity via Gizmos.
-/// Attach en el mismo GameObject que DungeonGenerator.
-/// </summary>
 public class DungeonDebugger : MonoBehaviour
 {
-    [SerializeField] private DungeonConfig config;
+    [SerializeField] private bool showRoomLabels  = true;
+    [SerializeField] private bool showThreatBudget = true;
+    [SerializeField] private bool showLootInfo    = true;
+    [SerializeField] private bool showGraph       = true;
 
-    [Header("Colores")]
-    [SerializeField] private Color roomColor      = new Color(0.2f, 0.6f, 1f,  0.4f);
-    [SerializeField] private Color corridorColor  = new Color(1f,   0.8f, 0.2f, 0.3f);
-    [SerializeField] private Color wallColor      = new Color(0.8f, 0.2f, 0.2f, 0.2f);
-    [SerializeField] private Color startColor     = new Color(0.2f, 1f,   0.2f, 0.6f);
-    [SerializeField] private Color bossColor      = new Color(1f,   0.2f, 0.2f, 0.6f);
-    [SerializeField] private Color connectionColor = Color.white;
+    private DungeonGrid     grid;
+    private List<RoomData>  rooms;
+    private DungeonGraph    graph;
 
-    // Datos guardados tras la generación
-    private DungeonGrid      lastGrid;
-    private List<RoomData>   lastRooms;
-
-    public void SetData(DungeonGrid grid, List<RoomData> rooms)
+    public void SetData(DungeonGrid g, List<RoomData> r, DungeonGraph gr = null)
     {
-        lastGrid  = grid;
-        lastRooms = rooms;
+        grid = g; rooms = r; graph = gr;
+    }
+
+    private void OnGUI()
+    {
+        if (rooms == null || rooms.Count == 0) return;
+
+        // Panel lateral de stats detallados
+        GUILayout.BeginArea(new Rect(Screen.width - 340, 15, 325, Screen.height - 30));
+        var style = new GUIStyle(GUI.skin.box) { fontSize = 10, alignment = TextAnchor.UpperLeft };
+
+        GUILayout.BeginVertical(style);
+        GUILayout.Label("── DUNGEON DEBUG ──", new GUIStyle { fontSize = 11,
+            fontStyle = FontStyle.Bold, normal = { textColor = Color.cyan } });
+
+        foreach (var room in rooms)
+        {
+            var color = RoomTypeColor(room.RoomType);
+            var labelStyle = new GUIStyle { fontSize = 10,
+                normal = { textColor = color } };
+
+            string line = $"[{room.Id}] {room.RoomType,-9} {room.Bounds.width}×{room.Bounds.height}";
+
+            if (showThreatBudget && room.ResolvedEnemies != null && room.ResolvedEnemies.Count > 0)
+            {
+                int totalCost = room.ResolvedEnemies.Sum(e => e.ThreatCost);
+                line += $" | ☠ {totalCost}pts ({room.ResolvedEnemies.Count} enemies)";
+            }
+
+            if (showLootInfo && room.ResolvedLoot != null && room.ResolvedLoot.Count > 0)
+                line += $" | ♦ {room.ResolvedLoot.Count} loot";
+
+            GUILayout.Label(line, labelStyle);
+        }
+
+        GUILayout.Space(8);
+        GUILayout.Label($"Grid: {grid?.Width}×{grid?.Height} | Cell: {grid?.CellSize}u",
+                         new GUIStyle { fontSize = 10, normal = { textColor = Color.gray } });
+
+        GUILayout.EndVertical();
+        GUILayout.EndArea();
     }
 
     private void OnDrawGizmos()
     {
-        if (!config.drawGizmos) return;
-        if (lastGrid == null)   return;
+        if (rooms == null || grid == null) return;
 
-        int cs = config.cellSize;
-
-        // ── Dibujar celdas de la grilla ──────────────────────────
-        foreach (var kvp in lastGrid.GetAllCells())
+        foreach (var room in rooms)
         {
-            Vector2Int cell = kvp.Key;
-            CellType   type = kvp.Value;
+            // Caja de la sala en colores por tipo
+            Gizmos.color = RoomTypeColorGizmo(room.RoomType);
+            var center = grid.RectCenter(room.Bounds);
+            var size   = new Vector3(
+                room.Bounds.width  * grid.CellSize,
+                0.2f,
+                room.Bounds.height * grid.CellSize);
+            Gizmos.DrawWireCube(center, size);
 
-            Vector3 center = DungeonGrid.CellToWorld(cell, cs);
-            Vector3 size   = new Vector3(cs * 0.9f, 0.05f, cs * 0.9f);
+            // Label en Scene view (solo Editor)
+#if UNITY_EDITOR
+            if (showRoomLabels)
+                UnityEditor.Handles.Label(center + Vector3.up * 2f,
+                    $"{room.RoomType}\n{room.Bounds.width}×{room.Bounds.height}");
+#endif
 
-            switch (type)
+            // Sockets de puertas
+            if (room.Sockets != null)
             {
-                case CellType.Room:
-                    Gizmos.color = roomColor;
-                    Gizmos.DrawCube(center, size);
-                    break;
-
-                case CellType.Corridor:
-                    Gizmos.color = corridorColor;
-                    Gizmos.DrawCube(center, size);
-                    break;
+                Gizmos.color = Color.yellow;
+                foreach (var socket in room.Sockets)
+                    Gizmos.DrawSphere(socket.WorldPosition, 0.4f);
             }
         }
 
-        // ── Dibujar salas con etiquetas ───────────────────────────
-        if (lastRooms == null) return;
-
-        foreach (var room in lastRooms)
+        // Graph connections
+        if (showGraph && graph != null)
         {
-            // Borde de la sala
-            Color borderColor = room.RoomType switch
+            Gizmos.color = new Color(1f, 0.5f, 0f, 0.6f);
+            foreach (var node in graph.Nodes)
             {
-                RoomType.Start   => startColor,
-                RoomType.Boss    => bossColor,
-                _                => roomColor
-            };
-            borderColor.a = 1f;
+                if (node.PlacedRoom == null) continue;
+                var from = grid.RectCenter(node.PlacedRoom.Bounds) + Vector3.up * 3f;
 
-            Vector3 worldCenter = DungeonGrid.CellToWorld(room.CenterCellInt, cs);
-            Vector3 roomSize    = new Vector3(room.Bounds.width * cs, 0.1f, room.Bounds.height * cs);
-
-            Gizmos.color = borderColor;
-            Gizmos.DrawWireCube(worldCenter, roomSize);
-
-            // Etiqueta
-#if UNITY_EDITOR
-            UnityEditor.Handles.color = borderColor;
-            UnityEditor.Handles.Label(worldCenter + Vector3.up * 2f, room.DebugLabel);
-#endif
-        }
-
-        // ── Dibujar conexiones entre salas ────────────────────────
-        var drawn = new HashSet<(int, int)>();
-
-        foreach (var room in lastRooms)
-        {
-            Vector3 fromWorld = DungeonGrid.CellToWorld(room.CenterCellInt, cs);
-
-            foreach (int neighborId in room.ConnectedRoomIds)
-            {
-                int a = Mathf.Min(room.Id, neighborId);
-                int b = Mathf.Max(room.Id, neighborId);
-                if (drawn.Contains((a, b))) continue;
-                drawn.Add((a, b));
-
-                RoomData neighbor = lastRooms.Find(r => r.Id == neighborId);
-                if (neighbor == null) continue;
-
-                Vector3 toWorld = DungeonGrid.CellToWorld(neighbor.CenterCellInt, cs);
-
-                Gizmos.color = connectionColor;
-                Gizmos.DrawLine(fromWorld + Vector3.up * 0.5f, toWorld + Vector3.up * 0.5f);
+                foreach (var connId in node.ConnectedNodeIds)
+                {
+                    var connNode = graph.Nodes.Find(n => n.Id == connId);
+                    if (connNode?.PlacedRoom == null) continue;
+                    var to = grid.RectCenter(connNode.PlacedRoom.Bounds) + Vector3.up * 3f;
+                    Gizmos.DrawLine(from, to);
+                }
             }
         }
     }
+
+    private Color RoomTypeColorGizmo(RoomType type) => type switch
+    {
+        RoomType.Start    => Color.green,
+        RoomType.Combat   => Color.red,
+        RoomType.Treasure => Color.yellow,
+        RoomType.Elite    => new Color(1f, 0.5f, 0f),
+        RoomType.Boss     => Color.magenta,
+        _                 => Color.white
+    };
+
+    private Color RoomTypeColor(RoomType type) => type switch
+    {
+        RoomType.Start    => Color.green,
+        RoomType.Combat   => new Color(1f, 0.4f, 0.4f),
+        RoomType.Treasure => Color.yellow,
+        RoomType.Elite    => new Color(1f, 0.6f, 0.1f),
+        RoomType.Boss     => Color.magenta,
+        _                 => Color.white
+    };
 }

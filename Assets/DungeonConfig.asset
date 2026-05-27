@@ -12,14 +12,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 67c128bf99b1a4c449f703cddcb3815f, type: 3}
   m_Name: DungeonConfig
   m_EditorClassIdentifier: Assembly-CSharp::DungeonConfig
-  minRoomsPerDungeon: 5
-  maxRoomsPerDungeon: 15
-  roomSize: {x: 20, y: 20}
-  moduleSize: 2
-  wallHeight: 3
-  decorationDensity: 0.1192
-  difficultyLevel: 1
-  dungeonSeed: 1256412500
+  cellSize: 4
+  gridWidth: 50
+  gridHeight: 50
+  currentBiome: {fileID: 11400000, guid: 55e731a90fac4804dba480018976e573, type: 2}
+  bossRoomMinCells: 5
+  bossRoomMaxCells: 8
+  dungeonDepth: 0
+  seed: -1331810234
   useRandomSeed: 1
-  drawDebugGizmos: 1
-  logGenerationStats: 1
+  drawGizmos: 1
+  logStats: 1

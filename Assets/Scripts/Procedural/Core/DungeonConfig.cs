@@ -1,49 +1,29 @@
 using UnityEngine;
 
-/// <summary>
-/// Configuración BASE del dungeon: grilla, prefabs y semilla.
-/// Los parámetros que cambian por dificultad (salas, pasillos) están en DungeonDifficultyConfig.
-/// 
-/// Crear via: Assets > Create > Dungeon > Config
-/// </summary>
 [CreateAssetMenu(fileName = "DungeonConfig", menuName = "Dungeon/Config")]
 public class DungeonConfig : ScriptableObject
 {
-    // ─────────────────────────────────────────────
-    // GRILLA (fija para todo el juego)
-    // ─────────────────────────────────────────────
-    [Header("Grid — Invariable por dificultad")]
-    [Tooltip("Tamaño de cada celda en unidades Unity. TODO el sistema usa este valor.")]
-    public int cellSize = 5;
+    [Header("Módulo Base")]
+    public int cellSize = 4;
 
-    [Tooltip("Ancho del mapa en celdas")]
-    public int gridWidth = 80;
+    [Header("Tamaño de la Grilla (en celdas)")]
+    public int gridWidth  = 40;
+    public int gridHeight = 40;
 
-    [Tooltip("Alto del mapa en celdas")]
-    public int gridHeight = 80;
+    [Header("Biome Activo")]
+    public BiomeConfig currentBiome;
 
-    // ─────────────────────────────────────────────
-    // PREFABS
-    // ─────────────────────────────────────────────
-    [Header("Prefabs")]
-    [Tooltip("Prefab de suelo. Se instancia en celdas Room/Corridor.")]
-    public GameObject floorPrefab;
+    [Header("Boss Room")]
+    public int bossRoomMinCells = 5;
+    public int bossRoomMaxCells = 8;
 
-    [Tooltip("Prefab de pared. Se instancia en celdas Empty adyacentes al suelo.")]
-    public GameObject wallPrefab;
+    [Header("Dungeon Depth")]
+    public int dungeonDepth = 0;
 
-    // ─────────────────────────────────────────────
-    // SEMILLA
-    // ─────────────────────────────────────────────
     [Header("Seed")]
-    public int seed = 12345;
-
-    [Tooltip("Si está activo, genera una semilla distinta en cada generación.")]
+    public int  seed          = 0;
     public bool useRandomSeed = true;
 
-    // ─────────────────────────────────────────────
-    // DEBUG
-    // ─────────────────────────────────────────────
     [Header("Debug")]
     public bool drawGizmos = true;
     public bool logStats   = true;
