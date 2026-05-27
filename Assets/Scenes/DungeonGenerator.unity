@@ -119,6 +119,71 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1001 &299472542
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 6184559723131349883, guid: 11b8760b83dc5f545b3e38e3272b48e5, type: 3}
+      propertyPath: m_Name
+      value: Door
+      objectReference: {fileID: 0}
+    - target: {fileID: 6816242985405968833, guid: 11b8760b83dc5f545b3e38e3272b48e5, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6816242985405968833, guid: 11b8760b83dc5f545b3e38e3272b48e5, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6816242985405968833, guid: 11b8760b83dc5f545b3e38e3272b48e5, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6816242985405968833, guid: 11b8760b83dc5f545b3e38e3272b48e5, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6816242985405968833, guid: 11b8760b83dc5f545b3e38e3272b48e5, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0.000000021855694
+      objectReference: {fileID: 0}
+    - target: {fileID: 6816242985405968833, guid: 11b8760b83dc5f545b3e38e3272b48e5, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6816242985405968833, guid: 11b8760b83dc5f545b3e38e3272b48e5, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6816242985405968833, guid: 11b8760b83dc5f545b3e38e3272b48e5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6816242985405968833, guid: 11b8760b83dc5f545b3e38e3272b48e5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6816242985405968833, guid: 11b8760b83dc5f545b3e38e3272b48e5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8032009863207785929, guid: 11b8760b83dc5f545b3e38e3272b48e5, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 18.5882
+      objectReference: {fileID: 0}
+    - target: {fileID: 8032009863207785929, guid: 11b8760b83dc5f545b3e38e3272b48e5, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.4424
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 11b8760b83dc5f545b3e38e3272b48e5, type: 3}
 --- !u!1 &1491768784
 GameObject:
   m_ObjectHideFlags: 0
@@ -395,15 +460,14 @@ GameObject:
   - component: {fileID: 2043412693}
   - component: {fileID: 2043412695}
   - component: {fileID: 2043412701}
-  - component: {fileID: 2043412700}
-  - component: {fileID: 2043412699}
   - component: {fileID: 2043412698}
   - component: {fileID: 2043412697}
-  - component: {fileID: 2043412696}
-  - component: {fileID: 2043412703}
   - component: {fileID: 2043412702}
+  - component: {fileID: 2043412707}
+  - component: {fileID: 2043412706}
   - component: {fileID: 2043412705}
   - component: {fileID: 2043412704}
+  - component: {fileID: 2043412703}
   m_Layer: 0
   m_Name: DungeonManager
   m_TagString: Untagged
@@ -424,12 +488,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DungeonLayoutGenerator
   config: {fileID: 11400000, guid: 02fd335506c57dc42aafd09e2385e3df, type: 2}
-  poissonSampler: {fileID: 2043412702}
-  delaunay: {fileID: 2043412705}
-  mstCalculator: {fileID: 2043412704}
-  minRoomDistance: 25
-  maxRoomDistance: 50
-  dungeonSize: {x: 200, y: 200}
 --- !u!4 &2043412694
 Transform:
   m_ObjectHideFlags: 0
@@ -458,24 +516,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DungeonGenerator
   config: {fileID: 11400000, guid: 02fd335506c57dc42aafd09e2385e3df, type: 2}
-  layoutGen: {fileID: 2043412693}
-  archGen: {fileID: 2043412701}
-  connGen: {fileID: 2043412700}
-  accessValidator: {fileID: 2043412698}
-  debugger: {fileID: 2043412697}
---- !u!114 &2043412696
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2043412692}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1c2ac18df3a432846bd4d427d4b66bfb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoomConnectionGenerator
-  config: {fileID: 11400000, guid: 02fd335506c57dc42aafd09e2385e3df, type: 2}
+  easyConfig: {fileID: 0}
+  normalConfig: {fileID: 0}
+  hardConfig: {fileID: 0}
+  nightmareConfig: {fileID: 0}
+  useFallbackPresets: 1
 --- !u!114 &2043412697
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -488,13 +533,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4efec1ab2f93e914b8a85be3eb62646c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DungeonDebugger
-  drawRoomGrids: 1
-  drawWallPositions: 1
-  drawDoorPositions: 1
-  roomGridColor: {r: 0, g: 1, b: 1, a: 1}
-  bossRoomColor: {r: 1, g: 0, b: 0, a: 1}
-  wallColor: {r: 1, g: 1, b: 1, a: 1}
-  doorColor: {r: 0, g: 1, b: 0, a: 1}
+  showRoomLabels: 1
+  showThreatBudget: 1
+  showLootInfo: 1
+  showGraph: 1
 --- !u!114 &2043412698
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -508,35 +550,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AccessibilityValidator
   config: {fileID: 11400000, guid: 02fd335506c57dc42aafd09e2385e3df, type: 2}
---- !u!114 &2043412699
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2043412692}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 65f7d5812f962154bbc97844224dcaa0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RoomPlacementValidator
-  config: {fileID: 11400000, guid: 02fd335506c57dc42aafd09e2385e3df, type: 2}
-  minRoomDistance: 2
-  overlapPadding: 1
---- !u!114 &2043412700
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2043412692}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 890c610ff60923e4d8c3c59ce27af353, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SmartConnectionGenerator
-  config: {fileID: 11400000, guid: 02fd335506c57dc42aafd09e2385e3df, type: 2}
-  corridorWidth: 3
 --- !u!114 &2043412701
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -550,10 +563,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RoomArchitectureGenerator
   config: {fileID: 11400000, guid: 02fd335506c57dc42aafd09e2385e3df, type: 2}
-  stoneMaterial: {fileID: 0}
-  iceMaterial: {fileID: 0}
-  fireMaterial: {fileID: 0}
-  forestMaterial: {fileID: 0}
+  wallPrefabWidth: 4
+  wallHeight: 3
 --- !u!114 &2043412702
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -563,9 +574,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 2043412692}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 077203cc549207149adeee75b35339a6, type: 3}
+  m_Script: {fileID: 11500000, guid: 0032af9a631922741bc14366cea2e3f1, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PoissonDiskSampler
+  m_EditorClassIdentifier: Assembly-CSharp::SmartConnectionGenerator
+  config: {fileID: 11400000, guid: 02fd335506c57dc42aafd09e2385e3df, type: 2}
 --- !u!114 &2043412703
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -575,10 +587,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 2043412692}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bc1d6c1816d214a44a8715fee68818a4, type: 3}
+  m_Script: {fileID: 11500000, guid: b41bbf425c0d72a4e82d4fc0dcd7feee, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CorridorGenerator
-  corridorWidth: 3
+  m_EditorClassIdentifier: Assembly-CSharp::PropDecorator
 --- !u!114 &2043412704
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -588,9 +599,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 2043412692}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 17e3704a74a08824f994fd7965e3808e, type: 3}
+  m_Script: {fileID: 11500000, guid: 68893937400167e4ba898abaa2e86468, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MinimumSpanningTree
+  m_EditorClassIdentifier: Assembly-CSharp::LootGenerator
 --- !u!114 &2043412705
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -600,9 +611,34 @@ MonoBehaviour:
   m_GameObject: {fileID: 2043412692}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ac250aa781043b54eb8a70095bb8834d, type: 3}
+  m_Script: {fileID: 11500000, guid: 31bac499eeab5ee48acf92558c768087, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DelaunayTriangulation
+  m_EditorClassIdentifier: Assembly-CSharp::EnemySpawner
+  pool: {fileID: 11400000, guid: 629398ce5d2764a418ce29663eb75a8f, type: 2}
+--- !u!114 &2043412706
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2043412692}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c23c9657023d8f34a8f03f1ec949807e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DoorSocketResolver
+--- !u!114 &2043412707
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2043412692}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c26766d7c4993544295f3192c0eca57d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DungeonGraphGenerator
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -610,3 +646,4 @@ SceneRoots:
   - {fileID: 1733706635}
   - {fileID: 1491768786}
   - {fileID: 2043412694}
+  - {fileID: 299472542}

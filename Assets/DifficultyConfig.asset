@@ -23,3 +23,9 @@ MonoBehaviour:
   maxPlacementAttempts: 80
   corridorWidth: 1
   extraConnectionRatio: 0.12
+  minCombatRooms: 3
+  maxCombatRooms: 6
+  treasureRoomChance: 0.7
+  eliteRoomChance: 0.5
+  baseThreatBudget: 80
+  depthScaling: 0.15
