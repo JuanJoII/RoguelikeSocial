@@ -71,35 +71,40 @@ public class RoomManager : MonoBehaviour
     /// </summary>
     public void ActivateRoom(RoomContext context)
     {
-        // Si había una sala activa, la detenemos limpiamente
         if (_roomActive)
             waveManager.StopWaves();
 
         _currentContext = context;
         _currentConfig = context.GetRandomConfig();
-
         if (_currentConfig == null) return;
 
-        // Reseteamos el estado de la sala
         _enemiesDefeated = 0;
         _roomStartTime = Time.time;
         _roomActive = true;
 
-        // Actualizamos la cámara para esta sala
         TopDownCamera.Instance.SetRoomBounds(
             context.boundsMin, context.boundsMax, context.useCameraBounds);
 
-        // Notificamos al RunManager qué sala está activa
         RunManager.Instance.SetCurrentRoom(context.roomIndex);
 
-        // Arrancamos las oleadas
+        // Usamos el WaveManager del RoomContext, no el del Inspector
+        // Este es el que el integrador configuró con los spawn points correctos
+        WaveManager contextWaveManager = context.GetComponent<WaveManager>();
+
+        if (contextWaveManager == null)
+        {
+            Debug.LogError($"[RoomManager] El RoomContext {context.roomIndex} " +
+                           "no tiene WaveManager. Verifica el integrador.");
+            return;
+        }
+
+        // Actualizamos la referencia activa
+        waveManager = contextWaveManager;
+
         waveManager.Initialize(_currentConfig, playerTransform);
         waveManager.StartWaves();
 
-        // Avisamos al UIManager el total de enemigos de esta sala
         OnEnemyCountChanged?.Invoke(0, _currentConfig.totalEnemiesRequired);
-
-        Debug.Log($"[RoomManager] Sala {context.roomIndex} activada con config: {_currentConfig.name}");
     }
 
     private void HandleEnemyDied(EnemyAI enemy)

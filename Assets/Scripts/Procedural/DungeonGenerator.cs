@@ -57,70 +57,7 @@ public class DungeonGenerator : MonoBehaviour
         lootGen        = GetComponent<LootGenerator>();
         propDecorator  = GetComponent<PropDecorator>();
     }
-
-    // ─────────────────────────────────────────────
-    // GUI
-    // ─────────────────────────────────────────────
-
-    private void OnGUI()
-    {
-        GUILayout.BeginArea(new Rect(15, 15, 310, 480));
-
-        var title = new GUIStyle(GUI.skin.label) { fontSize = 14, fontStyle = FontStyle.Bold };
-        var info  = new GUIStyle(GUI.skin.label) { fontSize = 11 };
-
-        GUILayout.Label("⚔  Procedural Dungeon Generator", title);
-        GUILayout.Label("Bitmask Tileset | Boss Room | MST Kruskal", info);
-        GUILayout.Space(8);
-
-        GUILayout.Label("Dificultad:", new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold });
-        GUILayout.BeginHorizontal();
-        DiffBtn(DifficultyLevel.Easy,      "Easy",      Color.green);
-        DiffBtn(DifficultyLevel.Normal,    "Normal",    Color.yellow);
-        DiffBtn(DifficultyLevel.Hard,      "Hard",      new Color(1f, .5f, 0f));
-        DiffBtn(DifficultyLevel.Nightmare, "Nightmare", Color.red);
-        GUILayout.EndHorizontal();
-        GUILayout.Space(10);
-
-        if (GUILayout.Button("▶  Generar Dungeon", GUILayout.Height(50)))
-        {
-            if (config.useRandomSeed) config.seed = (int)System.DateTime.Now.Ticks;
-            Generate();
-        }
-        GUILayout.Space(4);
-        if (GUILayout.Button("♻  Reproducir (misma semilla)", GUILayout.Height(36))) Generate();
-        GUILayout.Space(4);
-        if (GUILayout.Button("🗑  Limpiar", GUILayout.Height(32))) Clear();
-
-        GUILayout.Space(10);
-        GUILayout.Label("──────────────────────────────", info);
-
-        if (rooms != null)
-        {
-            var diff = GetDiff(difficulty);
-            var boss = rooms.Count > 0 ? rooms[rooms.Count - 1] : null;
-            GUILayout.Label($"Dificultad:  {diff.displayName}", info);
-            GUILayout.Label($"Salas:       {rooms.Count}", info);
-            GUILayout.Label($"Boss:        {(boss != null ? boss.DebugLabel : "ninguna")}", info);
-            GUILayout.Label($"Seed:        {config.seed}", info);
-            GUILayout.Label($"CellSize:    {config.cellSize}u", info);
-            GUILayout.Label($"Accesible:   {(lastValid ? "✓ SÍ" : "✗ NO")}", info);
-        }
-        else
-        {
-            GUILayout.Label("[ Sin dungeon generado ]", info);
-        }
-
-        GUILayout.EndArea();
-    }
-
-    private void DiffBtn(DifficultyLevel level, string label, Color active)
-    {
-        GUI.backgroundColor = difficulty == level ? active : Color.white;
-        if (GUILayout.Button(label, GUILayout.Height(28))) difficulty = level;
-        GUI.backgroundColor = Color.white;
-    }
-
+    
     // ─────────────────────────────────────────────
     // GENERACIÓN — iterativa, sin recursión
     // ─────────────────────────────────────────────

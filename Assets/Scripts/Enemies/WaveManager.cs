@@ -28,12 +28,7 @@ public class WaveManager : MonoBehaviour
 {
     // RoomManager y EnemyGroup se comunican a través de este evento
     public static Action<EnemyGroup> OnGroupDefeated;
-
-    [Header("Spawn Points")]
-    [Tooltip("Posiciones donde aparecen los portales de spawn. " +
-             "Coloca al menos 3-4 en esquinas y bordes de la sala.")]
-    [SerializeField] private Transform[] spawnPoints;
-
+    
     [Header("VFX")]
     [SerializeField] private VFXData portalVFX;
 
@@ -45,6 +40,10 @@ public class WaveManager : MonoBehaviour
     private int _activeEnemyCount;
     private bool _bossRoomActive;
     private Coroutine _bossRoomRoutine;
+    
+    // Campos nuevos — el integrador los asigna después de Instantiate
+    private Transform[] spawnPoints;
+    private Vector3 _roomCenter;
 
     public void Initialize(RoomConfigSO config, Transform player)
     {
@@ -151,24 +150,36 @@ public class WaveManager : MonoBehaviour
 
     private void SpawnBoss()
     {
+        Debug.Log($"[WaveManager] Spawneando en posición: {transform.position}");
         if (_config.bossPrefab == null)
         {
-            Debug.LogError("[WaveManager] isBossRoom es true pero bossPrefab no está asignado " +
-                           $"en {_config.name}.");
+            Debug.LogError("[WaveManager] bossPrefab no asignado.");
             return;
         }
 
-        // Spawneamos en el centro de la sala más el offset configurado
-        // El centro lo calculamos desde el WaveManager transform,
-        // que debe estar en el centro de la sala
-        Vector3 spawnPosition = transform.position + _config.bossSpawnOffset;
+        Vector3 desiredPosition = transform.position + _config.bossSpawnOffset;
+
+        // Raycast hacia abajo para encontrar el suelo real
+        // El boss aparece exactamente sobre la geometría generada
+        Vector3 spawnPosition = desiredPosition;
+
+        if (Physics.Raycast(desiredPosition + Vector3.up * 10f, Vector3.down, 
+                out RaycastHit hit, 20f))
+        {
+            spawnPosition = hit.point;
+            spawnPosition.y += 0.1f; // pequeño offset para no quedar enterrado
+        }
+        else
+        {
+            Debug.LogWarning("[WaveManager] No se encontró suelo bajo el boss. " +
+                             "Verifica bossSpawnOffset en el RoomConfigSO.");
+        }
 
         GameObject bossObj = Instantiate(_config.bossPrefab, spawnPosition, Quaternion.identity);
 
         if (!bossObj.TryGetComponent<BossBase>(out _activeBoss))
         {
-            Debug.LogError("[WaveManager] El bossPrefab no tiene un componente " +
-                           "que herede de BossBase.");
+            Debug.LogError("[WaveManager] El bossPrefab no tiene componente BossBase.");
             Destroy(bossObj);
             return;
         }
@@ -211,6 +222,20 @@ public class WaveManager : MonoBehaviour
 
     private IEnumerator SpawnWave(WaveConfigSO waveConfig)
     {
+        if (waveConfig?.enemyData == null)
+        {
+            Debug.LogError("[WaveManager] WaveConfig o EnemyData es null.");
+            yield break;
+        }
+
+        if (spawnPoints == null || spawnPoints.Length == 0)
+        {
+            Debug.LogError("[WaveManager] No hay SpawnPoints asignados. " +
+                           "Verifica que el integrador llamó SetSpawnPoints() correctamente.");
+            yield break;
+        }
+        
+        Debug.Log($"[WaveManager] SpawnPoint[0] posición: {spawnPoints[0].position}");
         if (waveConfig?.enemyData == null) yield break;
         if (spawnPoints == null || spawnPoints.Length == 0)
         {
@@ -280,5 +305,18 @@ public class WaveManager : MonoBehaviour
             // un conteo por grupo, pero esto es suficiente para el proyecto
             _activeEnemyCount = Mathf.Max(0, _activeEnemyCount - 1);
         }
+    }
+
+    public void SetSpawnPoints(Transform[] points)
+    {
+        spawnPoints = points; // asigna al campo serializado existente
+    }
+
+    public void SetRoomCenter(Vector3 center)
+    {
+        _roomCenter = center;
+        // Actualizamos el offset del boss para que spawne en el centro
+        // transform.position ya es el centro porque el integrador
+        // coloca el WaveManager ahí
     }
 }

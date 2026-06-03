@@ -15,6 +15,9 @@ public class RoomEntrance : MonoBehaviour
 {
     [SerializeField] private RoomContext targetRoom;
 
+    // Campo nuevo
+    private WaveManager _waveManager;
+    
     private bool _activated;
 
     private void OnTriggerEnter(Collider other)
@@ -31,5 +34,16 @@ public class RoomEntrance : MonoBehaviour
 
         _activated = true;
         RoomManager.Instance.ActivateRoom(targetRoom);
+    }
+    // El integrador llama estos en lugar de requerir asignación manual
+    public void SetTargetRoom(RoomContext context)
+    {
+        targetRoom = context;
+    }
+
+    public void SetWaveManager(WaveManager waveManager)
+    {
+        // Guardamos referencia para pasarla al RoomManager al activarse
+        _waveManager = waveManager;
     }
 }
