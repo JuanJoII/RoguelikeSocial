@@ -25,7 +25,7 @@ public class RoomManager : MonoBehaviour
 
     // UIManager y otros sistemas escuchan estos eventos
     public static event Action<int, int> OnEnemyCountChanged; // (muertos, total)
-    public static event Action<int> OnRoomComplete;           // (score obtenido)
+    public static event Action<int, int> OnRoomComplete;          // (score obtenido)
 
     [Header("Referencias")]
     [SerializeField] private WaveManager waveManager;
@@ -109,6 +109,11 @@ public class RoomManager : MonoBehaviour
 
     private void HandleEnemyDied(EnemyAI enemy)
     {
+        Debug.Log($"[RoomManager] Enemigo muerto recibido. " +
+                  $"Estado roomActive: {_roomActive}, " +
+                  $"Muertos: {_enemiesDefeated}, " +
+                  $"Total requerido: {_currentConfig?.totalEnemiesRequired}");
+        
         if (!_roomActive) return;
 
         _enemiesDefeated++;
@@ -137,7 +142,9 @@ public class RoomManager : MonoBehaviour
     private void CompleteRoom()
     {
         _roomActive = false;
-        waveManager.StopWaves();
+
+        // Limpiamos enemigos extras antes de calcular score
+        waveManager.ClearActiveEnemies();
 
         float timeElapsed = Time.time - _roomStartTime;
         int lives = FindObjectOfType<PlayerHealth>()?.CurrentLives ?? 0;
@@ -145,13 +152,8 @@ public class RoomManager : MonoBehaviour
 
         int score = ScoreCalculator.Calculate(timeElapsed, lives, isBoss);
 
-        // Guardamos el score en el RunManager (él decide si supera el mejor)
         RunManager.Instance.RegisterRoomScore(_currentContext.roomIndex, score);
-
-        // Notificamos — UIManager muestra la pantalla de score
-        // GameManager maneja la transición al siguiente estado
-        OnRoomComplete?.Invoke(score);
-
+        OnRoomComplete?.Invoke(score, _currentContext.roomIndex);
         GameManager.Instance.TransitionTo(GameManager.GameState.RoomTransition);
     }
 

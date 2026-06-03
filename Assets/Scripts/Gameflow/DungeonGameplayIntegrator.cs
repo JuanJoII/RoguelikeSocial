@@ -78,46 +78,82 @@ public class DungeonGameplayIntegrator : MonoBehaviour
     /// Integra el dungeon generado con todos los sistemas de gameplay.
     /// </summary>
     public void Integrate()
+{
+    List<RoomData> rooms = dungeonGenerator.GetRooms();
+
+    if (rooms == null || rooms.Count == 0)
     {
-        List<RoomData> rooms = dungeonGenerator.GetRooms();
-
-        if (rooms == null || rooms.Count == 0)
-        {
-            Debug.LogError("[DungeonGameplayIntegrator] No hay salas generadas. " +
-                           "Llama Generate() antes de Integrate().");
-            return;
-        }
-
-        // Limpiamos objetos de gameplay de la generación anterior
-        // para que regenerar el dungeon funcione limpiamente
-        ClearGeneratedObjects();
-
-        float cellSize = dungeonGenerator.Config.cellSize;
-
-        SpawnPlayer(rooms, cellSize);
-        SetupRooms(rooms, cellSize);
-        SetupEntranceTriggers(rooms, cellSize);
-
-        // Suscribimos el evento de sala completa para abrir paredes
-        RoomManager.OnRoomComplete += HandleRoomComplete;
-        
-        Debug.Log($"[DungeonGameplayIntegrator] Integración completa. " +
-                  $"{rooms.Count} salas configuradas.");
+        Debug.LogError("[DungeonGameplayIntegrator] No hay salas generadas.");
+        return;
     }
-    private void HandleRoomComplete(int score)
+
+    ClearGeneratedObjects();
+
+    float cellSize = dungeonGenerator.Config.cellSize;
+
+    SpawnPlayer(rooms, cellSize);
+    SetupRooms(rooms, cellSize);
+    SetupEntranceTriggers(rooms, cellSize);
+
+    // Activamos la primera sala automáticamente
+    // El jugador ya está ahí — no necesita cruzar ningún trigger
+    ActivateFirstRoom();
+
+    Debug.Log("[DungeonGameplayIntegrator] Integración completa.");
+}
+
+private void ActivateFirstRoom()
+{
+    RoomManager.OnRoomComplete += HandleRoomComplete;
+    
+    if (_roomContexts == null || _roomContexts.Count == 0)
     {
-        // RoomManager sabe qué sala acaba de completarse
-        int completedRoomId = RunManager.Instance.CurrentRoomIndex;
+        Debug.LogError("[DungeonGameplayIntegrator] No hay RoomContexts generados.");
+        return;
+    }
 
-        if (_roomWalls.TryGetValue(completedRoomId, out List<RoomWall> walls))
+    // La primera sala es el índice 0 — la de tipo Start
+    RoomContext firstRoom = _roomContexts[0];
+
+    if (firstRoom == null)
+    {
+        Debug.LogError("[DungeonGameplayIntegrator] RoomContext de la primera sala es null.");
+        return;
+    }
+
+    // Pequeño delay para asegurar que todo está inicializado
+    // antes de que empiecen a spawnear enemigos
+    StartCoroutine(ActivateFirstRoomDelayed(firstRoom));
+}
+
+private System.Collections.IEnumerator ActivateFirstRoomDelayed(RoomContext context)
+{
+    // Esperamos dos frames — uno para que Awake/Start de todos
+    // los componentes corran, otro para que el jugador esté
+    // completamente inicializado en su posición
+    yield return null;
+    yield return null;
+
+    RoomManager.Instance.ActivateRoom(context);
+}
+private void HandleRoomComplete(int score, int completedRoomId)
+{
+    Debug.Log($"[Integrador] Sala {completedRoomId} completada. " +
+              $"Paredes registradas: {string.Join(", ", _roomWalls.Keys)}");
+
+    if (_roomWalls.TryGetValue(completedRoomId, out List<RoomWall> walls))
+    {
+        foreach (RoomWall wall in walls)
         {
-            foreach (RoomWall wall in walls)
-            {
-                if (wall != null)
-                    wall.Open();
-            }
+            if (wall != null)
+                wall.Open();
         }
     }
+    else
+    {
+        Debug.LogWarning($"[Integrador] No hay paredes registradas para sala {completedRoomId}.");
+    }
+}
 
     private void OnDestroy()
     {
@@ -167,6 +203,7 @@ public class DungeonGameplayIntegrator : MonoBehaviour
                            "y no hay existingPlayer. El jugador no fue spawneado.");
         }
     }
+    
 
     // ════════════════════════════════════════════════════════════════════
     // SALAS — RoomContext + SpawnPoints + Boss
@@ -180,7 +217,8 @@ public class DungeonGameplayIntegrator : MonoBehaviour
         {
             RoomData room = rooms[i];
             Vector3 center = RoomWorldCenter(room, cellSize);
-
+            bool isLastRoom = i == rooms.Count - 1;
+            
             // ── RoomContext ────────────────────────────────────────────
             GameObject contextObj = new GameObject($"RoomContext_{room.Id}");
             contextObj.transform.position = center;
@@ -191,7 +229,9 @@ public class DungeonGameplayIntegrator : MonoBehaviour
 
             // Elegimos la config correspondiente al índice
             // Si hay más salas que configs, reutilizamos la última
-            int configIndex = Mathf.Min(i, roomConfigs.Length - 1);
+            int configIndex = (isLastRoom && roomConfigs[roomConfigs.Length - 1].isBossRoom)
+                ? roomConfigs.Length - 1
+                : 0;
             context.possibleConfigs = new RoomConfigSO[] { roomConfigs[configIndex] };
 
             // Bounds de cámara calculados desde el RoomData
@@ -212,15 +252,7 @@ public class DungeonGameplayIntegrator : MonoBehaviour
             // Lo buscamos en el RoomContext o lo creamos aquí
             WaveManager waveManager = contextObj.AddComponent<WaveManager>();
             waveManager.SetSpawnPoints(spawnPoints);
-
-            // ── Boss en la última sala ────────────────────────────────
-            bool isLastRoom = i == rooms.Count - 1;
-            if (isLastRoom && roomConfigs[configIndex].isBossRoom)
-            {
-                // Pasamos la posición del centro de la sala al WaveManager
-                // para que sepa dónde spawnear el boss
-                waveManager.SetRoomCenter(center);
-            }
+            
         }
     }
 
@@ -333,8 +365,8 @@ public class DungeonGameplayIntegrator : MonoBehaviour
     Vector3 direction = (centerB - centerA).normalized;
     bool isHorizontal = Mathf.Abs(direction.x) > Mathf.Abs(direction.z);
 
-    float perpendicularSize = cellSize * 4f;
-    float depthSize = cellSize * 1.5f;
+    float perpendicularSize = cellSize*2f; // justo el ancho del pasillo
+    float depthSize = cellSize*0.05f;           // suficiente para no saltarlo
 
     triggerCol.isTrigger = true;
     triggerCol.size = isHorizontal
@@ -364,26 +396,29 @@ private RoomWall CreateWall(Vector3 position, bool isHorizontal, float cellSize)
     wallObj.transform.position = position + Vector3.up * (wallHeight * 0.5f);
     _generatedObjects.Add(wallObj);
 
-    // Mesh visible
+    // Rotamos el padre según la orientación
+    // Horizontal (conexión en X): la pared se extiende en Z → sin rotación
+    // Vertical (conexión en Z): la pared se extiende en X → rotamos 90°
+    wallObj.transform.rotation = isHorizontal
+        ? Quaternion.identity
+        : Quaternion.Euler(0f, 90f, 0f);
+
     GameObject wallMesh = GameObject.CreatePrimitive(PrimitiveType.Cube);
     wallMesh.transform.SetParent(wallObj.transform);
     wallMesh.transform.localPosition = Vector3.zero;
+    wallMesh.transform.localRotation = Quaternion.identity;
 
-    // Dimensiones — cubre todo el ancho del pasillo
-    wallMesh.transform.localScale = isHorizontal
-        ? new Vector3(0.3f, wallHeight, cellSize * 4f)
-        : new Vector3(cellSize * 4f, wallHeight, 0.3f);
+    // Siempre usamos la misma escala local — la rotación del padre la orienta
+    float wallWidth = cellSize * 4f;
+    wallMesh.transform.localScale = new Vector3(0.3f, wallHeight, wallWidth);
 
-    // Collider de bloqueo — en el padre para que RoomWall lo encuentre
+    // Collider en el padre
     BoxCollider blockCol = wallObj.AddComponent<BoxCollider>();
-    blockCol.size = isHorizontal
-        ? new Vector3(0.3f, wallHeight, cellSize * 4f)
-        : new Vector3(cellSize * 4f, wallHeight, 0.3f);
+    blockCol.size = new Vector3(0.3f, wallHeight, wallWidth);
 
     if (wallMaterial != null)
         wallMesh.GetComponent<Renderer>().material = wallMaterial;
 
-    // Destruimos el collider del mesh hijo — usamos el del padre
     Destroy(wallMesh.GetComponent<Collider>());
 
     RoomWall roomWall = wallObj.AddComponent<RoomWall>();

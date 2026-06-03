@@ -74,4 +74,28 @@ public class EnemyGroup : MonoBehaviour
         WaveManager.OnGroupDefeated?.Invoke(this);
         gameObject.SetActive(false);
     }
+    /// <summary>
+    /// Disuelve el grupo devolviendo todos sus miembros al pool.
+    /// Llamado cuando la sala se completa con enemigos extras en escena.
+    /// </summary>
+    public void ForceDissolve()
+    {
+        // Copiamos la lista para iterar seguro mientras la modificamos
+        List<EnemyAI> toDissolve = new List<EnemyAI>(_members);
+
+        foreach (EnemyAI member in toDissolve)
+        {
+            if (member == null) continue;
+
+            // VFX de desaparición — el mismo de muerte está bien
+            if (member.Data != null)
+                VFXPool.Instance.PlayVFX(
+                    member.Data.deathVFX, member.transform.position, Quaternion.identity);
+
+            ObjectPool.Instance.ReturnEnemy(member.gameObject, member.Data.enemyType);
+        }
+
+        _members.Clear();
+        gameObject.SetActive(false);
+    }
 }

@@ -105,7 +105,7 @@ public class UIManager : MonoBehaviour
         PlayerHealth.OnPlayerDead   += HandlePlayerDead;
         WeaponSystem.OnBulletTypeChanged += HandleBulletTypeChanged;
         RoomManager.OnEnemyCountChanged  += HandleEnemyCountChanged;
-        RoomManager.OnRoomComplete       += HandleRoomComplete;
+        RoomManager.OnRoomComplete += HandleRoomComplete;
         GameManager.OnStateChanged       += HandleGameStateChanged;
     }
 
@@ -179,11 +179,10 @@ public class UIManager : MonoBehaviour
         enemyCounterText.text = $"{defeated} / {total}";
     }
 
-    private void HandleRoomComplete(int score)
+    private void HandleRoomComplete(int score, int roomIndex)
     {
         if (_scoreCountCoroutine != null)
             StopCoroutine(_scoreCountCoroutine);
-
         _scoreCountCoroutine = StartCoroutine(ShowRoomComplete(score));
     }
 

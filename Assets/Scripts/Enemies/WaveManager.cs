@@ -41,6 +41,9 @@ public class WaveManager : MonoBehaviour
     private bool _bossRoomActive;
     private Coroutine _bossRoomRoutine;
     
+    private int _totalEnemiesRequired;
+    private int _totalEnemiesSpawned;
+    
     // Campos nuevos — el integrador los asigna después de Instantiate
     private Transform[] spawnPoints;
     private Vector3 _roomCenter;
@@ -51,6 +54,8 @@ public class WaveManager : MonoBehaviour
         _player = player;
         _activeEnemyCount = 0;
         _bossRoomActive = false;
+        _totalEnemiesSpawned = 0;
+        _totalEnemiesRequired = config.totalEnemiesRequired;
     }
 
     public void StartWaves()
@@ -220,76 +225,66 @@ public class WaveManager : MonoBehaviour
 
     // ── Spawn de una oleada ───────────────────────────────────────────────
 
-    private IEnumerator SpawnWave(WaveConfigSO waveConfig)
+   private IEnumerator SpawnWave(WaveConfigSO waveConfig)
+{
+    if (waveConfig?.enemyData == null) yield break;
+    if (spawnPoints == null || spawnPoints.Length == 0)
     {
-        if (waveConfig?.enemyData == null)
-        {
-            Debug.LogError("[WaveManager] WaveConfig o EnemyData es null.");
-            yield break;
-        }
-
-        if (spawnPoints == null || spawnPoints.Length == 0)
-        {
-            Debug.LogError("[WaveManager] No hay SpawnPoints asignados. " +
-                           "Verifica que el integrador llamó SetSpawnPoints() correctamente.");
-            yield break;
-        }
-        
-        Debug.Log($"[WaveManager] SpawnPoint[0] posición: {spawnPoints[0].position}");
-        if (waveConfig?.enemyData == null) yield break;
-        if (spawnPoints == null || spawnPoints.Length == 0)
-        {
-            Debug.LogError("[WaveManager] No hay SpawnPoints asignados.");
-            yield break;
-        }
-
-        int enemyCount = Random.Range(waveConfig.minEnemies, waveConfig.maxEnemies + 1);
-
-        // Elegimos un spawn point para esta oleada
-        Transform spawnPoint = spawnPoints[Random.Range(0, spawnPoints.Length)];
-
-        // Portal VFX — feedback visual de dónde va a aparecer la oleada
-        VFXPool.Instance.PlayVFX(portalVFX, spawnPoint.position, spawnPoint.rotation);
-
-        // Esperamos antes de empezar a spawnear — el jugador ve el portal
-        yield return new WaitForSeconds(waveConfig.portalDelay);
-
-        // Creamos el grupo que va a gestionar esta oleada
-        GameObject groupObj = new GameObject($"EnemyGroup_{waveConfig.name}");
-        EnemyGroup group = groupObj.AddComponent<EnemyGroup>();
-
-        List<EnemyAI> members = new List<EnemyAI>();
-
-        for (int i = 0; i < enemyCount; i++)
-        {
-            GameObject enemyObj = ObjectPool.Instance.GetEnemy(waveConfig.enemyData.enemyType);
-            if (enemyObj == null) continue;
-
-            // Pequeña variación en la posición para que no aparezcan
-            // todos exactamente en el mismo punto
-            Vector3 spawnPos = spawnPoint.position + new Vector3(
-                Random.Range(-0.8f, 0.8f), 0f, Random.Range(-0.8f, 0.8f));
-
-            enemyObj.transform.position = spawnPos;
-
-            if (enemyObj.TryGetComponent<EnemyAI>(out var enemyAI))
-                members.Add(enemyAI);
-
-            _activeEnemyCount++;
-
-            yield return new WaitForSeconds(waveConfig.spawnInterval);
-        }
-
-        // Inicializamos el grupo con todos sus miembros
-        group.Initialize(members);
-
-        // Inicializamos cada enemigo con los datos y la referencia al grupo
-        foreach (EnemyAI enemy in members)
-            enemy.Initialize(waveConfig.enemyData, _player, group);
-
-        // Escuchamos cuando este grupo sea derrotado para actualizar el contador
-        OnGroupDefeated += HandleGroupDefeated;
+        Debug.LogError("[WaveManager] No hay SpawnPoints.");
+        yield break;
     }
+
+    int enemyCount = Random.Range(waveConfig.minEnemies, waveConfig.maxEnemies + 1);
+
+    // Limitamos para no exceder el total requerido
+    if (!_config.isBossRoom)
+    {
+        int remaining = _totalEnemiesRequired - _totalEnemiesSpawned;
+        enemyCount = Mathf.Min(enemyCount, remaining);
+
+        // Si ya spawneamos todos los que necesitábamos, no spawneamos más
+        if (enemyCount <= 0) yield break;
+    }
+
+    Transform spawnPoint = spawnPoints[Random.Range(0, spawnPoints.Length)];
+
+    VFXPool.Instance.PlayVFX(portalVFX, spawnPoint.position, spawnPoint.rotation);
+    yield return new WaitForSeconds(waveConfig.portalDelay);
+
+    GameObject groupObj = new GameObject($"EnemyGroup_{waveConfig.name}");
+    EnemyGroup group = groupObj.AddComponent<EnemyGroup>();
+    List<EnemyAI> members = new List<EnemyAI>();
+
+    for (int i = 0; i < enemyCount; i++)
+    {
+        // Verificación adicional por si el conteo cambió
+        if (!_config.isBossRoom && _totalEnemiesSpawned >= _totalEnemiesRequired)
+            break;
+
+        GameObject enemyObj = ObjectPool.Instance.GetEnemy(waveConfig.enemyData.enemyType);
+        if (enemyObj == null) continue;
+
+        Vector3 spawnPos = spawnPoint.position + new Vector3(
+            Random.Range(-0.8f, 0.8f), 0f, Random.Range(-0.8f, 0.8f));
+
+        enemyObj.transform.position = spawnPos;
+
+        if (enemyObj.TryGetComponent<EnemyAI>(out var enemyAI))
+            members.Add(enemyAI);
+
+        _totalEnemiesSpawned++;
+        _activeEnemyCount++;
+
+        yield return new WaitForSeconds(waveConfig.spawnInterval);
+    }
+
+    group.Initialize(members);
+    foreach (EnemyAI enemy in members)
+        enemy.Initialize(waveConfig.enemyData, _player, group);
+
+    OnGroupDefeated += HandleGroupDefeated;
+}
+
 
     private void HandleGroupDefeated(EnemyGroup group)
     {
@@ -319,4 +314,23 @@ public class WaveManager : MonoBehaviour
         // transform.position ya es el centro porque el integrador
         // coloca el WaveManager ahí
     }
+    /// <summary>
+    /// Devuelve al pool todos los enemigos activos de esta sala.
+    /// Llamado por RoomManager cuando se completa la sala.
+    /// </summary>
+    public void ClearActiveEnemies()
+    {
+        StopAllCoroutines();
+        _bossRoomActive = false;
+
+        // Buscamos todos los EnemyAI activos que pertenecen a esta sala
+        // Los encontramos por los EnemyGroup activos
+        EnemyGroup[] activeGroups = GetComponentsInChildren<EnemyGroup>();
+        foreach (EnemyGroup group in activeGroups)
+        {
+            if (group == null) continue;
+            group.ForceDissolve();
+        }
+    }
+    
 }

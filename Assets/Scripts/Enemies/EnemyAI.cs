@@ -48,7 +48,8 @@ public class EnemyAI : MonoBehaviour
     // Layer mask para separación — solo detecta otros enemigos
     private static int _enemyLayer;
     private Rigidbody _rb;
-
+// Agrega esta propiedad en EnemyAI
+    public EnemyDataSO Data => _data;
     private void Awake()
     {
         _enemyLayer = LayerMask.GetMask("Enemy");
@@ -256,6 +257,7 @@ public class EnemyAI : MonoBehaviour
 
         // Notificamos al grupo antes de devolver al pool
         // El grupo actualiza su lista y notifica al RoomManager
+        OnEnemyDied?.Invoke(this);   
         _group?.ReportDeath(this);
 
         ObjectPool.Instance.ReturnEnemy(gameObject, _data.enemyType);
