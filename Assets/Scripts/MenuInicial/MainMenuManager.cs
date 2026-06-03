@@ -38,9 +38,6 @@ public class MainMenuManager : MonoBehaviour
     [SerializeField] private Button rankingButton;
     [SerializeField] private Button exitButton;
 
-    [Header("Ranking")]
-    [SerializeField] private RankingPanel rankingPanel;
-
     [Header("Nombres de escenas")]
     [Tooltip("Nombres exactos de las escenas de cada nivel en Build Settings.")]
     [SerializeField] private string[] levelSceneNames = { "Level_01", "Level_02", "Level_03" };
@@ -80,7 +77,6 @@ public class MainMenuManager : MonoBehaviour
     {
         pauseButton?.onClick.AddListener(ToggleLobbyPause);
         resumeLobbyButton?.onClick.AddListener(ToggleLobbyPause);
-        rankingButton?.onClick.AddListener(OnRankingPressed);
         exitButton?.onClick.AddListener(OnExitPressed);
     }
 
@@ -133,9 +129,6 @@ public class MainMenuManager : MonoBehaviour
         Time.timeScale = _isPaused ? 0f : 1f;
         SetLobbyPauseVisible(_isPaused);
 
-        // Si cerramos la pausa, también cerramos el ranking si está abierto
-        if (!_isPaused)
-            rankingPanel?.Hide();
     }
 
     private void SetLobbyPauseVisible(bool visible, bool instant = false)
@@ -157,12 +150,12 @@ public class MainMenuManager : MonoBehaviour
 
     private System.Collections.IEnumerator FadeCanvasGroup(CanvasGroup group, bool fadeIn)
     {
-        float start  = group.alpha;
+        float start = group.alpha;
         float target = fadeIn ? 1f : 0f;
         float elapsed = 0f;
         float duration = 0.25f;
 
-        group.interactable   = false;
+        group.interactable = false;
         group.blocksRaycasts = fadeIn;
 
         while (elapsed < duration)
@@ -179,11 +172,6 @@ public class MainMenuManager : MonoBehaviour
     // ════════════════════════════════════════════════════════════════════
     // BOTONES
     // ════════════════════════════════════════════════════════════════════
-
-    private void OnRankingPressed()
-    {
-        rankingPanel?.Show();
-    }
 
     private void OnExitPressed()
     {

@@ -140,45 +140,52 @@ public class DataManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Descarga el ranking global ordenado por totalScore.
-    /// El callback recibe la lista de entradas.
+    /// Descarga el ranking global de Supabase ordenando por puntaje total de mayor a menor.
     /// </summary>
-    public void FetchRanking(Action<List<RankingPanel.RankingEntry>> onComplete)
+    public void FetchRanking(Action<List<PlayerProgressModel>> onComplete)
     {
-        Debug.Log("[DataManager] FetchRanking — conectar con Supabase.");
         FetchRankingAsync(onComplete).Forget();
     }
 
-    public async UniTaskVoid FetchRankingAsync(Action<List<RankingPanel.RankingEntry>> onComplete)
+    private async UniTaskVoid FetchRankingAsync(Action<List<PlayerProgressModel>> onComplete)
     {
         try
         {
+            // ── CONTROL DE SEGURIDAD ─────────────────────────────────────────────
+            // Si no se asignó en el inspector, intentamos buscarlo en la escena
+            if (authManager == null)
+            {
+                authManager = FindFirstObjectByType<AuthManager>(); // O FindObjectOfType en versiones viejas de Unity
+            }
+
+            // Si aún así no existe o el cliente no está instanciado, abortamos de forma segura
+            // if (authManager == null || authManager.SupabaseClient == null)
+            // {
+            //     Debug.LogError("[DataManager] No se puede cargar el ranking porque AuthManager o SupabaseClient son nulos.");
+            //     onComplete?.Invoke(new List<PlayerProgressModel>());
+            //     return;
+            // }
+
+            if (!authManager.IsInitialized)
+            {
+                Debug.Log("[DataManager] Esperando a que Supabase termine de inicializarse...");
+                await UniTask.WaitUntil(() => authManager.IsInitialized);
+            }
+            // Hacemos el GET ordenando descendentemente por la columna total_score
             var response = await authManager.SupabaseClient
                 .From<PlayerProgressModel>()
                 .Order(x => x.TotalScore, Constants.Ordering.Descending)
-                .Limit(10)
+                .Limit(10) // Top 10 jugadores
                 .Get()
                 .AsUniTask();
 
-            var rankingEntries = new List<RankingPanel.RankingEntry>();
-
-            foreach (var model in response.Models)
-            {
-                rankingEntries.Add(new RankingPanel.RankingEntry
-                {
-                    username = model.Username,
-                    totalScore = model.TotalScore,
-                    maxUnlockedLevel = model.Level
-                });
-            }
-
-            onComplete?.Invoke(rankingEntries);
-            Debug.Log("Ranking global cargado exitosamente.");
+            // Enviamos la lista de modelos directamente al callback
+            onComplete?.Invoke(response.Models);
         }
-        catch (System.Exception ex)
+        catch (Exception ex)
         {
-            Debug.LogError($"Error al cargar ranking global: {ex.Message}");
-            onComplete?.Invoke(new List<RankingPanel.RankingEntry>());
+            Debug.LogError($"[DataManager] Error al descargar el Ranking: {ex.Message}");
+            onComplete?.Invoke(new List<PlayerProgressModel>());
         }
     }
 
@@ -202,7 +209,7 @@ public class DataManager : MonoBehaviour
                 Level = level,
                 LastRoom = lastRoom,
                 TotalScore = totalScore,
-                Payload = payload
+                Payload = Newtonsoft.Json.JsonConvert.DeserializeObject(payload) // Guardamos el payload como un objeto JSON deserializado
             };
 
             await authManager.SupabaseClient.From<PlayerProgressModel>().Upsert(progressData).AsUniTask();

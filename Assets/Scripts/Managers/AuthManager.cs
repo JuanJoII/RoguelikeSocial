@@ -12,6 +12,7 @@ public class AuthManager : MonoBehaviour
     [SerializeField] private string supabaseAnonKey = "KEY_Supabase";
 
     public Supabase.Client SupabaseClient { get; private set; }
+    public bool IsInitialized { get; private set; } = false;
 
     private void Awake()
     {
@@ -22,6 +23,7 @@ public class AuthManager : MonoBehaviour
         };
 
         SupabaseClient = new Supabase.Client(supabaseUrl, supabaseAnonKey, options);
+        DontDestroyOnLoad(gameObject);
     }
 
     private async void Start()
@@ -29,6 +31,7 @@ public class AuthManager : MonoBehaviour
         try
         {
             await SupabaseClient.InitializeAsync().AsUniTask();
+            IsInitialized = true;
             Debug.Log("Supabase client initialized successfully.");
         }
         catch (System.Exception ex)

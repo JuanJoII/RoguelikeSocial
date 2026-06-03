@@ -26,6 +26,6 @@ namespace RoguelikeSocial.Assets.Scripts.Models
         public int TotalScore { get; set; }
 
         [Column("payload")]
-        public string Payload { get; set; }
+        public object Payload { get; set; }
     }
 }
