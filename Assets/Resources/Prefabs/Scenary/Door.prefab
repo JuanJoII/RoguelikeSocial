@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 7581796180763475556}
   - component: {fileID: 5679888216086350510}
   - component: {fileID: 8670383464315611524}
+  - component: {fileID: 7837568737695844151}
   m_Layer: 0
   m_Name: Door
   m_TagString: Untagged
@@ -107,6 +108,28 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RoomModule
   SnapPoints:
   - {fileID: 5753266726544517744}
+--- !u!64 &7837568737695844151
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6184559723131349883}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: -3325904660541066189, guid: c850130b224f0324590849841229f205, type: 3}
 --- !u!1 &7587965421229822400
 GameObject:
   m_ObjectHideFlags: 0

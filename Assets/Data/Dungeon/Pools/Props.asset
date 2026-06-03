@@ -12,4 +12,88 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3e930fdae9fd37546b7c1deeb37a085c, type: 3}
   m_Name: Props
   m_EditorClassIdentifier: Assembly-CSharp::PropCollection
-  Props: []
+  Props:
+  - PropName: Torsher
+    Prefab: {fileID: 9139366492957165865, guid: c52c58054a70e3b4eb5e099beec892d4, type: 3}
+    PlacementRule: 2
+    Weight: 60
+    SpawnChance: 1
+    AllowedRooms: 
+    RequiresFurnitureNearby: 0
+  - PropName: Doll
+    Prefab: {fileID: 4256376332325481759, guid: 51738d261bb20da4ebe7f804b4cb813c, type: 3}
+    PlacementRule: 0
+    Weight: 50
+    SpawnChance: 0.489
+    AllowedRooms: 01000000
+    RequiresFurnitureNearby: 0
+  - PropName: Barrel1
+    Prefab: {fileID: 2104881876737850862, guid: 8a10677247c8c084fa53d9c56a740870, type: 3}
+    PlacementRule: 3
+    Weight: 60
+    SpawnChance: 1
+    AllowedRooms: 
+    RequiresFurnitureNearby: 0
+  - PropName: Barrel2
+    Prefab: {fileID: 8271413963625903108, guid: def52aa97191369418798b8c16870a4b, type: 3}
+    PlacementRule: 2
+    Weight: 60
+    SpawnChance: 1
+    AllowedRooms: 
+    RequiresFurnitureNearby: 0
+  - PropName: BoxWood
+    Prefab: {fileID: 518377276183028063, guid: e8acb0aaa6512a34f94de01dc60cb08e, type: 3}
+    PlacementRule: 2
+    Weight: 80
+    SpawnChance: 1
+    AllowedRooms: 
+    RequiresFurnitureNearby: 0
+  - PropName: Table
+    Prefab: {fileID: 8686590205830545041, guid: 5121063e2b9d7fc4787c454f3ada0788, type: 3}
+    PlacementRule: 3
+    Weight: 80
+    SpawnChance: 1
+    AllowedRooms: 
+    RequiresFurnitureNearby: 0
+  - PropName: Mimic
+    Prefab: {fileID: 1577436447290420850, guid: 762fb831e5104304399199be79a3e338, type: 3}
+    PlacementRule: 0
+    Weight: 60
+    SpawnChance: 1
+    AllowedRooms: 
+    RequiresFurnitureNearby: 0
+  - PropName: Oz
+    Prefab: {fileID: 2712115267261622187, guid: bb3ce20ef8671d5449d481d48c257e08, type: 3}
+    PlacementRule: 3
+    Weight: 80
+    SpawnChance: 1
+    AllowedRooms: 0200000004000000
+    RequiresFurnitureNearby: 0
+  - PropName: Daga
+    Prefab: {fileID: 7191183840412066043, guid: b43b841d256fceb4399c7bd4e2e9a708, type: 3}
+    PlacementRule: 3
+    Weight: 80
+    SpawnChance: 1
+    AllowedRooms: 0200000004000000
+    RequiresFurnitureNearby: 0
+  - PropName: chest
+    Prefab: {fileID: 8640959531188338836, guid: 89c076cfa9478e041ae31c45b8a07fed, type: 3}
+    PlacementRule: 0
+    Weight: 80
+    SpawnChance: 1
+    AllowedRooms: 
+    RequiresFurnitureNearby: 0
+  - PropName: skull
+    Prefab: {fileID: 1615433152278209811, guid: f81f2b6213ad94449a8c9803ead38d27, type: 3}
+    PlacementRule: 3
+    Weight: 80
+    SpawnChance: 1
+    AllowedRooms: 
+    RequiresFurnitureNearby: 0
+  - PropName: Bones
+    Prefab: {fileID: 456849548017594911, guid: 013b8de5734fe06498c4fb6d06249ee0, type: 3}
+    PlacementRule: 3
+    Weight: 80
+    SpawnChance: 1
+    AllowedRooms: 
+    RequiresFurnitureNearby: 0

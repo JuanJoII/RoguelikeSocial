@@ -7,6 +7,7 @@ public class RoomData
     public int      Id;
     public RoomType RoomType;
     public RectInt  Bounds;
+    public GameObject FloorObject;
     public List<int> ConnectedRoomIds = new();
 
     // ── Grafo ───────────────────────────────────────

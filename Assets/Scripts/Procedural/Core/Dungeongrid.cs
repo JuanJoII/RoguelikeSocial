@@ -173,4 +173,33 @@ public class DungeonGrid
     public Vector2Int WorldToCell(Vector3 world) => new Vector2Int(
         Mathf.FloorToInt(world.x / cellSize),
         Mathf.FloorToInt(world.z / cellSize));
+
+    /// <summary>
+    /// Posiciona un GameObject escalado para cubrir exactamente un RectInt de celdas,
+    /// independientemente de dónde esté el pivot del prefab.
+    /// Usar en lugar de Instantiate + asignación manual de posición/escala.
+    /// </summary>
+    public void PlaceScaledObject(GameObject go, RectInt rect, float prefabW, float prefabD)
+    {
+        float targetW = rect.width  * cellSize;
+        float targetD = rect.height * cellSize;
+
+        go.transform.localScale = new Vector3(targetW / prefabW, 1f, targetD / prefabD);
+
+        // Centro según renderer real, no según pivot
+        var r = go.GetComponentInChildren<Renderer>();
+        Vector3 center = RectCenter(rect);
+        center.y = 0f;
+
+        if (r != null)
+        {
+            Vector3 rCenter = r.bounds.center;
+            rCenter.y = 0f;
+            go.transform.position += center - rCenter;
+        }
+        else
+        {
+            go.transform.position = center;
+        }
+    }
 }

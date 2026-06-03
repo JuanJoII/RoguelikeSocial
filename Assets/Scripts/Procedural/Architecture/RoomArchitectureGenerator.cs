@@ -2,17 +2,22 @@ using UnityEngine;
 using System.Collections.Generic;
 
 /// Fuente de verdad para la generación visual del dungeon.
-/// 
+///
 /// SISTEMA DE SNAP:
 ///   - Suelos: 1 prefab escalado por sala (pivot centro, sin SnapPoints)
 ///   - Paredes y puertas: posicionadas via SnapPoints
 ///   - El DungeonGrid sigue siendo la fuente lógica (qué va dónde)
 ///   - Este sistema convierte esa lógica en geometría usando snap
 ///
-/// SETUP DE PREFABS:
-///   Pared: añadir RoomModule + 1 SnapPoint hijo en cada extremo lateral
-///          El forward del SnapPoint apunta HACIA AFUERA del prefab
-///   Puerta: igual que pared
+/// CORRECCIÓN DE PIVOT (v2):
+///   PlaceRoomFloor ya NO asume que el pivot del prefab está centrado.
+///   El flujo es:
+///     1. Instanciar en (0,0,0)
+///     2. Escalar usando el tamaño real del Renderer (no del prefab en disco)
+///     3. Leer renderer.bounds.center DESPUÉS de escalar
+///     4. Desplazar el objeto para que ese centro coincida con grid.RectCenter()
+///   Resultado: el suelo visual siempre queda alineado al Grid aunque el pivot
+///   esté en una esquina, en el borde, o en cualquier lugar arbitrario.
 public class RoomArchitectureGenerator : MonoBehaviour
 {
     [SerializeField] private DungeonConfig config;
@@ -23,6 +28,12 @@ public class RoomArchitectureGenerator : MonoBehaviour
     [SerializeField] private float wallPrefabWidth = 4f;
     [Tooltip("Alto real del prefab de pared en unidades Unity (eje Y)")]
     [SerializeField] private float wallHeight = 3f;
+
+    [Header("Diagnóstico de Floors")]
+    [Tooltip("Activa los logs y DrawLines de comparación Grid Center vs Floor Visual Center")]
+    [SerializeField] private bool diagFloors = true;
+    [Tooltip("Duración en segundos de las líneas de diagnóstico en SceneView")]
+    [SerializeField] private float diagDuration = 30f;
 
     // Contenedores de jerarquía
     private Transform floorParent;
@@ -90,12 +101,19 @@ public class RoomArchitectureGenerator : MonoBehaviour
                 floors++;
             }
 
-        // ── Paso 2: Paredes de salas via Snap ────────────────────
+        // ── Paso 2: Diagnóstico post-floor ───────────────────────
+        // Se ejecuta DESPUÉS de colocar todos los floors para poder
+        // comparar posición grid vs posición visual real.
+        if (diagFloors && rooms != null)
+            foreach (var room in rooms)
+                DiagnoseFloor(room, grid);
+
+        // ── Paso 3: Paredes de salas via Snap ────────────────────
         if (rooms != null)
             foreach (var room in rooms)
                 PlaceRoomWalls(room, grid, ref walls, ref doors);
 
-        // ── Paso 3: Suelo de pasillos ────────────────────────────
+        // ── Paso 4: Suelo de pasillos ────────────────────────────
         for (int x = 0; x < grid.Width;  x++)
         for (int y = 0; y < grid.Height; y++)
         {
@@ -107,7 +125,7 @@ public class RoomArchitectureGenerator : MonoBehaviour
             }
         }
 
-        // ── Paso 4: Paredes de pasillos via Snap ─────────────────
+        // ── Paso 5: Paredes de pasillos via Snap ─────────────────
         for (int x = 0; x < grid.Width;  x++)
         for (int y = 0; y < grid.Height; y++)
         {
@@ -122,10 +140,6 @@ public class RoomArchitectureGenerator : MonoBehaviour
 
             if (cnt == 0) continue;
 
-            // Solo colocamos pared en los lados que dan a Corridor.
-            // Los lados que dan a Room ya tienen su pared generada en PlaceRoomWalls,
-            // pero la celda vacía de esquina aún puede tener lados hacia Corridor
-            // que necesitan cerrarse.
             bool wallN = flN && grid.GetCell(cell + DirN) == CellType.Corridor;
             bool wallE = flE && grid.GetCell(cell + DirE) == CellType.Corridor;
             bool wallS = flS && grid.GetCell(cell + DirS) == CellType.Corridor;
@@ -151,7 +165,7 @@ public class RoomArchitectureGenerator : MonoBehaviour
     }
 
     // ─────────────────────────────────────────────────────────────
-    // SUELO DE SALA — 1 prefab escalado, sin SnapPoints
+    // SUELO DE SALA — pivot-independent (v2)
     // ─────────────────────────────────────────────────────────────
 
     private void PlaceRoomFloor(RoomData room, DungeonGrid grid)
@@ -159,36 +173,190 @@ public class RoomArchitectureGenerator : MonoBehaviour
         var prefab = Biome.GetFloorPrefab(CellType.Room);
         if (prefab == null) return;
 
-        // Centro exacto de la sala en mundo
-        Vector3 center = grid.RectCenter(room.Bounds);
-        center.y = 0f;
+        // ── PASO 1: Instanciar en el origen ──────────────────────
+        // Instanciar en (0,0,0) para que renderer.bounds esté en
+        // espacio mundo sin transformaciones heredadas del padre.
+        // Reparentamos después de posicionar (igual que PropDecorator).
+        var go = Instantiate(prefab, Vector3.zero, Quaternion.identity);
+        go.name = $"Floor_{room.DebugLabel}";
 
-        // Tamaño real del prefab desde su renderer
-        var renderer = prefab.GetComponentInChildren<Renderer>();
-        float prefabW = renderer != null ? renderer.bounds.size.x : wallPrefabWidth;
-        float prefabD = renderer != null ? renderer.bounds.size.z : wallPrefabWidth;
-        if (prefabW < 0.01f) prefabW = wallPrefabWidth;
-        if (prefabD < 0.01f) prefabD = wallPrefabWidth;
+        // ── PASO 2: Medir el prefab real instanciado ─────────────
+        // NO usar prefab.GetComponentInChildren<Renderer>().bounds
+        // porque esos bounds son en espacio LOCAL del asset, sin
+        // la escala/rotación del prefab aplicada en mundo.
+        var renderer = go.GetComponentInChildren<Renderer>();
 
+        float prefabW, prefabD;
+        if (renderer != null)
+        {
+            // bounds en espacio mundo con escala actual (1,1,1)
+            prefabW = renderer.bounds.size.x;
+            prefabD = renderer.bounds.size.z;
+        }
+        else
+        {
+            prefabW = wallPrefabWidth;
+            prefabD = wallPrefabWidth;
+        }
+
+        // Evitar división por cero
+        if (prefabW < 0.001f) prefabW = wallPrefabWidth;
+        if (prefabD < 0.001f) prefabD = wallPrefabWidth;
+
+        // ── PASO 3: Escalar para cubrir el rect de la sala ───────
         float targetW = room.Bounds.width  * grid.CellSize;
         float targetD = room.Bounds.height * grid.CellSize;
 
-        var go = Instantiate(prefab, center, Quaternion.identity, floorParent);
         go.transform.localScale = new Vector3(
             targetW / prefabW,
             1f,
             targetD / prefabD);
-        go.name = $"Floor_{room.DebugLabel}";
 
+        // ── PASO 4: Leer el centro geométrico REAL tras escalar ──
+        // Después de aplicar la escala, renderer.bounds.center da
+        // la posición en mundo del centro geométrico del mesh,
+        // que puede diferir de go.transform.position si el pivot
+        // no está en el centro del modelo.
+        Vector3 targetCenter = grid.RectCenter(room.Bounds);
+        targetCenter.y = 0f;
+
+        if (renderer != null)
+        {
+            // Offset entre pivot y centro geométrico real (en escala actual)
+            Vector3 rendererCenter = renderer.bounds.center;
+            rendererCenter.y = 0f;
+
+            // pivot está en (0,0,0), así que el offset es simplemente
+            // la posición del centro del renderer en espacio mundo
+            Vector3 pivotToRendererCenter = rendererCenter - go.transform.position;
+            pivotToRendererCenter.y = 0f;
+
+            // Colocar el pivot de modo que el renderer quede en targetCenter
+            go.transform.position = targetCenter - pivotToRendererCenter;
+        }
+        else
+        {
+            // Sin renderer: confiar en el pivot (comportamiento anterior)
+            go.transform.position = targetCenter;
+        }
+
+        // ── PASO 5: Reparentar conservando posición mundo ────────
+        go.transform.SetParent(floorParent, worldPositionStays: true);
+
+        // ── Gizmo ────────────────────────────────────────────────
         gizmos.Add(new GizmoItem {
-            Pos  = center + Vector3.up * 0.05f,
+            Pos  = targetCenter + Vector3.up * 0.05f,
             Col  = new Color(0.2f, 1f, 0.2f, 0.5f),
             Size = new Vector3(targetW, 0.1f, targetD)
         });
+
+        room.FloorObject = go;
     }
 
     // ─────────────────────────────────────────────────────────────
-    // PAREDES DE SALA — via SnapPoints
+    // DIAGNÓSTICO DE FLOOR
+    // Llamado automáticamente si diagFloors == true.
+    // También disponible como ContextMenu para llamar manualmente.
+    // ─────────────────────────────────────────────────────────────
+
+    private void DiagnoseFloor(RoomData room, DungeonGrid grid)
+    {
+        if (room.FloorObject == null)
+        {
+            Debug.LogWarning($"[ARCH DIAG] Room_{room.Id} — FloorObject es null");
+            return;
+        }
+
+        // Centro según Grid (fuente de verdad)
+        Vector3 gridCenter = grid.RectCenter(room.Bounds);
+        gridCenter.y = 0f;
+
+        // Centro visual real del mesh (renderer bounds, no pivot)
+        var renderer = room.FloorObject.GetComponentInChildren<Renderer>();
+        Vector3 visualCenter = renderer != null
+            ? new Vector3(renderer.bounds.center.x, 0f, renderer.bounds.center.z)
+            : new Vector3(room.FloorObject.transform.position.x, 0f,
+                          room.FloorObject.transform.position.z);
+
+        // Offset XZ entre los dos sistemas
+        float offsetXZ = Vector2.Distance(
+            new Vector2(gridCenter.x,  gridCenter.z),
+            new Vector2(visualCenter.x, visualCenter.z));
+
+        // Componentes individuales
+        float offsetX = visualCenter.x - gridCenter.x;
+        float offsetZ = visualCenter.z - gridCenter.z;
+
+        // Colores:
+        //   verde  → alineado (offset < 0.05u)
+        //   naranja → desfase moderado (0.05–1u)
+        //   rojo   → desfase significativo (> 1u)
+        Color lineColor = offsetXZ < 0.05f ? Color.green
+                        : offsetXZ < 1f    ? new Color(1f, 0.5f, 0f)
+                        :                    Color.red;
+
+        // Línea en SceneView entre centro de grid y centro visual del floor
+        Debug.DrawLine(
+            gridCenter   + Vector3.up * 0.3f,
+            visualCenter + Vector3.up * 0.3f,
+            lineColor,
+            diagDuration);
+
+        // Cruz verde en el centro de grid (fuente de verdad)
+        Debug.DrawLine(gridCenter + Vector3.left    * 0.4f + Vector3.up * 0.3f,
+                       gridCenter + Vector3.right   * 0.4f + Vector3.up * 0.3f,
+                       Color.green, diagDuration);
+        Debug.DrawLine(gridCenter + Vector3.back    * 0.4f + Vector3.up * 0.3f,
+                       gridCenter + Vector3.forward * 0.4f + Vector3.up * 0.3f,
+                       Color.green, diagDuration);
+
+        // Cruz cyan en el centro visual del floor (donde está realmente)
+        Debug.DrawLine(visualCenter + Vector3.left    * 0.4f + Vector3.up * 0.3f,
+                       visualCenter + Vector3.right   * 0.4f + Vector3.up * 0.3f,
+                       Color.cyan, diagDuration);
+        Debug.DrawLine(visualCenter + Vector3.back    * 0.4f + Vector3.up * 0.3f,
+                       visualCenter + Vector3.forward * 0.4f + Vector3.up * 0.3f,
+                       Color.cyan, diagDuration);
+
+        string status = offsetXZ < 0.05f ? "✅ ALINEADO"
+                      : offsetXZ < 1f    ? "⚠️  DESFASE MODERADO"
+                      :                    "❌ DESFASE SIGNIFICATIVO";
+
+        Debug.Log($"[ARCH DIAG] Room_{room.Id} [{room.RoomType}] {status}\n" +
+                  $"  Grid Center    (verde): ({gridCenter.x:F3}, {gridCenter.z:F3})\n" +
+                  $"  Floor Visual   (cyan):  ({visualCenter.x:F3}, {visualCenter.z:F3})\n" +
+                  $"  Offset X: {offsetX:F4}u  |  Offset Z: {offsetZ:F4}u  |  Offset XZ: {offsetXZ:F4}u\n" +
+                  $"  Bounds: {room.Bounds.width}×{room.Bounds.height} celdas @ " +
+                  $"({room.Bounds.x},{room.Bounds.y}) | CellSize={grid.CellSize}");
+    }
+
+    /// <summary>
+    /// Ejecuta el diagnóstico manualmente desde el Inspector.
+    /// Útil para verificar el estado sin regenerar el dungeon.
+    /// </summary>
+    [ContextMenu("Diagnosticar Floors")]
+    public void DiagnoseAllFloors()
+    {
+        var gen = GetComponent<DungeonGenerator>();
+        if (gen == null)
+        {
+            Debug.LogWarning("[ARCH] No hay DungeonGenerator en este GameObject"); return;
+        }
+
+        var rooms = gen.GetRooms();
+        var grid  = gen.GetGrid();
+        if (rooms == null || grid == null)
+        {
+            Debug.LogWarning("[ARCH] No hay dungeon generado"); return;
+        }
+
+        Debug.Log($"[ARCH DIAG] ══ Diagnóstico de {rooms.Count} floors ══");
+        foreach (var room in rooms)
+            DiagnoseFloor(room, grid);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // PAREDES DE SALA — via SnapPoints (sin cambios)
     // ─────────────────────────────────────────────────────────────
 
     private void PlaceRoomWalls(RoomData room, DungeonGrid grid,
@@ -203,7 +371,7 @@ public class RoomArchitectureGenerator : MonoBehaviour
         float worldMinZ = room.Bounds.y * cs;
         float worldMaxZ = (room.Bounds.y + room.Bounds.height) * cs;
 
-        // Norte — Z máximo, cara mira hacia interior (Sur = 180°)
+        // Norte
         for (int x = room.Bounds.x; x < room.Bounds.x + room.Bounds.width; x++)
         {
             var outside = new Vector2Int(x, room.Bounds.y + room.Bounds.height);
@@ -213,7 +381,7 @@ public class RoomArchitectureGenerator : MonoBehaviour
                           corridor && isBoss, corridor, ref walls, ref doors);
         }
 
-        // Sur — Z mínimo, cara mira hacia interior (Norte = 0°)
+        // Sur
         for (int x = room.Bounds.x; x < room.Bounds.x + room.Bounds.width; x++)
         {
             var outside = new Vector2Int(x, room.Bounds.y - 1);
@@ -223,7 +391,7 @@ public class RoomArchitectureGenerator : MonoBehaviour
                           corridor && isBoss, corridor, ref walls, ref doors);
         }
 
-        // Este — X máximo, cara mira hacia interior (Oeste = 270°)
+        // Este
         for (int y = room.Bounds.y; y < room.Bounds.y + room.Bounds.height; y++)
         {
             var outside = new Vector2Int(room.Bounds.x + room.Bounds.width, y);
@@ -233,7 +401,7 @@ public class RoomArchitectureGenerator : MonoBehaviour
                           corridor && isBoss, corridor, ref walls, ref doors);
         }
 
-        // Oeste — X mínimo, cara mira hacia interior (Este = 90°)
+        // Oeste
         for (int y = room.Bounds.y; y < room.Bounds.y + room.Bounds.height; y++)
         {
             var outside = new Vector2Int(room.Bounds.x - 1, y);
@@ -244,14 +412,11 @@ public class RoomArchitectureGenerator : MonoBehaviour
         }
     }
 
-    /// Instancia una pared o puerta en la posición/rotación dada.
-    /// Si el prefab tiene RoomModule, usa su SnapPoint para ajuste fino.
-    /// Si no tiene RoomModule, coloca directo (compatibilidad con prefabs simples).
     private void PlaceWallSnap(Vector3 targetPos, Quaternion targetRot,
                                 bool forceDoor, bool isCorridor,
                                 ref int walls, ref int doors)
     {
-        if (isCorridor && !forceDoor) return; // apertura de pasillo — no poner pared
+        if (isCorridor && !forceDoor) return;
 
         GameObject prefab = forceDoor
             ? Biome.GetDoorPrefab(true)
@@ -263,7 +428,6 @@ public class RoomArchitectureGenerator : MonoBehaviour
                              forceDoor ? doorParent : wallParent);
         go.transform.localScale = Vector3.one;
 
-        // Si el prefab tiene RoomModule, usar el SnapPoint para ajuste fino
         var module = go.GetComponent<RoomModule>();
         if (module != null)
         {
@@ -276,7 +440,6 @@ public class RoomArchitectureGenerator : MonoBehaviour
             }
         }
 
-        // Gizmo
         Color gizmoCol = forceDoor
             ? new Color(1f, 0.2f, 0.2f, 0.8f)
             : new Color(0.8f, 0.8f, 0.8f, 0.5f);
@@ -290,7 +453,7 @@ public class RoomArchitectureGenerator : MonoBehaviour
     }
 
     // ─────────────────────────────────────────────────────────────
-    // SUELO Y PAREDES DE PASILLO
+    // SUELO Y PAREDES DE PASILLO (sin cambios)
     // ─────────────────────────────────────────────────────────────
 
     private void PlaceCorridorFloor(Vector2Int cell, DungeonGrid grid)
@@ -306,11 +469,8 @@ public class RoomArchitectureGenerator : MonoBehaviour
         bool hasE = grid.IsFloor(cell + DirE);
         bool hasW = grid.IsFloor(cell + DirW);
 
-        // Rotar si el pasillo va en Z (Norte-Sur)
         bool goesNS = (hasN || hasS) && !(hasE || hasW);
-        Quaternion rot = goesNS
-            ? Quaternion.Euler(0f, 90f, 0f)
-            : Quaternion.identity;
+        Quaternion rot = goesNS ? Quaternion.Euler(0f, 90f, 0f) : Quaternion.identity;
 
         float cs = grid.CellSize;
 
@@ -337,9 +497,6 @@ public class RoomArchitectureGenerator : MonoBehaviour
 
         int cs = grid.CellSize;
 
-        // Una pared por cada dirección con vecino de suelo.
-        // Así las esquinas e intersecciones de pasillo quedan tapadas
-        // en todos sus lados sin dejar huecos.
         if (flN) PlaceOneSideWall(cell, cs,
             new Vector3(cell.x * cs + cs * 0.5f, wallHeight * 0.5f, (cell.y + 1) * cs),
             Quaternion.Euler(0f, 180f, 0f));
@@ -357,13 +514,11 @@ public class RoomArchitectureGenerator : MonoBehaviour
             Quaternion.Euler(0f, 90f, 0f));
     }
 
-    /// Instancia exactamente una pared de pasillo en el borde indicado.
     private void PlaceOneSideWall(Vector2Int cell, int cs, Vector3 pos, Quaternion rot)
     {
         var go = Instantiate(Biome.wallStraight, pos, rot, wallParent);
         go.transform.localScale = Vector3.one;
 
-        // Ajuste fino con SnapPoint si el prefab lo tiene
         var module = go.GetComponent<RoomModule>();
         if (module != null)
         {
@@ -384,7 +539,7 @@ public class RoomArchitectureGenerator : MonoBehaviour
     }
 
     // ─────────────────────────────────────────────────────────────
-    // BOSS ROOM
+    // BOSS ROOM / CONTENEDORES / LOG (sin cambios)
     // ─────────────────────────────────────────────────────────────
 
     private RoomData FindBossRoom(List<RoomData> rooms)
@@ -393,10 +548,6 @@ public class RoomArchitectureGenerator : MonoBehaviour
         var last = rooms[^1];
         return last.RoomType == RoomType.Boss ? last : null;
     }
-
-    // ─────────────────────────────────────────────────────────────
-    // CONTENEDORES
-    // ─────────────────────────────────────────────────────────────
 
     private Transform MakeContainer(string name)
     {

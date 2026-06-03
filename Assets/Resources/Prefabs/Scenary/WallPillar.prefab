@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 2700219125168574495}
   - component: {fileID: 188568121088632021}
   - component: {fileID: 8886482908707143066}
+  - component: {fileID: 5833121398235949824}
   m_Layer: 0
   m_Name: WallPillar
   m_TagString: Untagged
@@ -107,6 +108,27 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RoomModule
   SnapPoints:
   - {fileID: 4293980381480729900}
+--- !u!65 &5833121398235949824
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1845650961035216128}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 4.667881, y: 2.8694637, z: 0.8837738}
+  m_Center: {x: 10.426575, y: 1.4430043, z: 17.129648}
 --- !u!1 &3177506051964530513
 GameObject:
   m_ObjectHideFlags: 0

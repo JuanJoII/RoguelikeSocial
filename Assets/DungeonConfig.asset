@@ -19,7 +19,7 @@ MonoBehaviour:
   bossRoomMinCells: 5
   bossRoomMaxCells: 8
   dungeonDepth: 0
-  seed: -1331810234
+  seed: 1482612492
   useRandomSeed: 1
   drawGizmos: 1
   logStats: 1
