@@ -1,5 +1,9 @@
 using System.Collections.Generic;
 using UnityEngine;
+using Supabase.Postgrest;
+using Cysharp.Threading.Tasks;
+using RoguelikeSocial.Assets.Scripts.Models;
+using System;
 
 /// <summary>
 /// Única clase que habla con el sistema de Firebase de tu amigo.
@@ -15,6 +19,9 @@ public class DataManager : MonoBehaviour
 {
     public static DataManager Instance { get; private set; }
 
+    [Header("Supabase Config")]
+    [SerializeField] private AuthManager authManager;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -26,7 +33,7 @@ public class DataManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
-    // ── Estructuras de datos — acuerda estos campos con tu amigo ─────────
+    // ── Estructuras de datos — acuerda estos campos con tu amigo (ya 🤓) ─────────
 
     [System.Serializable]
     private class RoomProgressData
@@ -48,6 +55,7 @@ public class DataManager : MonoBehaviour
 
     public void SaveRunProgress(int level, int lastRoom, Dictionary<int, int> roomScores)
     {
+        int totalScore = 0;
         RoomProgressData[] rooms = new RoomProgressData[roomScores.Count];
         int i = 0;
 
@@ -70,9 +78,10 @@ public class DataManager : MonoBehaviour
 
         string json = JsonUtility.ToJson(payload);
 
-        // Aquí llamas el método de tu amigo
+        // El amigo fue llamado 🤓
         // Reemplaza esto con la firma exacta que él te dé
         // DatabaseBridge.Instance.SaveProgress(json);
+        SaveToSupabase(level, lastRoom, totalScore, json).Forget();
 
         Debug.Log($"[DataManager] Enviando a Firebase:\n{json}");
     }
@@ -89,11 +98,42 @@ public class DataManager : MonoBehaviour
     /// Descarga el progreso del jugador actual.
     /// El callback recibe username, totalScore y maxUnlockedLevel.
     /// </summary>
-    public void FetchPlayerProgress(System.Action<string, int, int> onComplete)
+    public async UniTaskVoid FetchPlayerProgress(System.Action<string, int, int> onComplete)
     {
-        // Tu amigo implementa la llamada a Firebase aquí.
+        // Tu amigo implementa la llamada a Supabase aquí. (el amigo la implemento 🤓)
+        try
+        {
+            var currentUser = authManager.SupabaseClient.Auth.CurrentUser;
+            if (currentUser == null)
+            {
+                Debug.LogError("No hay ningun usuario autenticado.");
+                return;
+            }
+
+            var response = await authManager.SupabaseClient
+                .From<PlayerProgressModel>()
+                .Where(x => x.Id == currentUser.Id)
+                .Single()
+                .AsUniTask();
+
+            if (response != null)
+            {
+                onComplete?.Invoke(response.Username, response.TotalScore, response.Level);
+                Debug.Log($"Progreso del jugador '{response.Username}' cargado: Nivel {response.Level}, Puntuación {response.TotalScore}");
+            }
+            else
+            {
+                Debug.LogWarning("No se encontró progreso para el jugador actual.");
+                onComplete?.Invoke("JugadorDesconocido", 0, 1); // Valores por defecto si no hay progreso
+            }
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"Error al cargar progreso del jugador: {ex.Message}");
+            onComplete?.Invoke("JugadorDesconocido", 0, 1); // Valores por defecto en caso de error
+        }
         // Por ahora un placeholder para que compile:
-        Debug.Log("[DataManager] FetchPlayerProgress — conectar con Firebase.");
+        Debug.Log("[DataManager] FetchPlayerProgress — conectar con Supabase.");
 
         // Simulación para desarrollo:
         onComplete?.Invoke("Jugador01", 4500, 2);
@@ -103,18 +143,74 @@ public class DataManager : MonoBehaviour
     /// Descarga el ranking global ordenado por totalScore.
     /// El callback recibe la lista de entradas.
     /// </summary>
-    public void FetchRanking(System.Action<System.Collections.Generic.List<RankingPanel.RankingEntry>> onComplete)
+    public void FetchRanking(Action<List<RankingPanel.RankingEntry>> onComplete)
     {
-        Debug.Log("[DataManager] FetchRanking — conectar con Firebase.");
+        Debug.Log("[DataManager] FetchRanking — conectar con Supabase.");
+        FetchRankingAsync(onComplete).Forget();
+    }
 
-        // Simulación para desarrollo:
-        var fakeData = new System.Collections.Generic.List<RankingPanel.RankingEntry>
+    public async UniTaskVoid FetchRankingAsync(Action<List<RankingPanel.RankingEntry>> onComplete)
+    {
+        try
         {
-            new RankingPanel.RankingEntry { username = "Jugador01", totalScore = 8200, maxUnlockedLevel = 3 },
-            new RankingPanel.RankingEntry { username = "Jugador02", totalScore = 6100, maxUnlockedLevel = 2 },
-            new RankingPanel.RankingEntry { username = "Jugador03", totalScore = 3400, maxUnlockedLevel = 1 }
-        };
+            var response = await authManager.SupabaseClient
+                .From<PlayerProgressModel>()
+                .Order(x => x.TotalScore, Constants.Ordering.Descending)
+                .Limit(10)
+                .Get()
+                .AsUniTask();
 
-        onComplete?.Invoke(fakeData);
+            var rankingEntries = new List<RankingPanel.RankingEntry>();
+
+            foreach (var model in response.Models)
+            {
+                rankingEntries.Add(new RankingPanel.RankingEntry
+                {
+                    username = model.Username,
+                    totalScore = model.TotalScore,
+                    maxUnlockedLevel = model.Level
+                });
+            }
+
+            onComplete?.Invoke(rankingEntries);
+            Debug.Log("Ranking global cargado exitosamente.");
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"Error al cargar ranking global: {ex.Message}");
+            onComplete?.Invoke(new List<RankingPanel.RankingEntry>());
+        }
+    }
+
+    private async UniTaskVoid SaveToSupabase(int level, int lastRoom, int totalScore, string payload)
+    {
+        try
+        {
+            var currentUser = authManager.SupabaseClient.Auth.CurrentUser;
+            if (currentUser == null)
+            {
+                Debug.LogError("No hay ningun usuario autenticado.");
+                return;
+            }
+
+            string username = currentUser.UserMetadata.ContainsKey("username") ? currentUser.UserMetadata["username"].ToString() : "Unknown";
+
+            var progressData = new PlayerProgressModel
+            {
+                Id = currentUser.Id,
+                Username = username,
+                Level = level,
+                LastRoom = lastRoom,
+                TotalScore = totalScore,
+                Payload = payload
+            };
+
+            await authManager.SupabaseClient.From<PlayerProgressModel>().Upsert(progressData).AsUniTask();
+            Debug.Log("Progreso guardado exitosamente en Supabase.");
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"Error al guardar progreso en Supabase: {ex.Message}");
+        }
     }
 }
