@@ -4382,9 +4382,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UIManager
   heartsContainer: {fileID: 1038258939}
-  heartPrefab: {fileID: 6693079303851071178, guid: c47f07fdd42c9204c9836735deb66eef, type: 3}
-  heartFullSprite: {fileID: 21300000, guid: 892a052b7609ea0418927c937815c39e, type: 3}
-  heartEmptySprite: {fileID: 21300000, guid: bb2d24c25ac3ee04bb5be3c33247e8d7, type: 3}
+  heartPrefab: {fileID: 5018337117595354535, guid: 6e2ee6717473e4f488530f3801f935d4, type: 3}
+  heartFullSprite: {fileID: -581878028, guid: 0cafc3a659c12d64e969dbe5fbc150eb, type: 3}
+  heartEmptySprite: {fileID: -1251296244, guid: 0cafc3a659c12d64e969dbe5fbc150eb, type: 3}
   bulletTypeIndicator: {fileID: 373438760}
   groundBulletSprite: {fileID: -182238442, guid: c98d1f5f4e9ec1742b814af6eec51d71, type: 3}
   airBulletSprite: {fileID: 786261885, guid: c98d1f5f4e9ec1742b814af6eec51d71, type: 3}
