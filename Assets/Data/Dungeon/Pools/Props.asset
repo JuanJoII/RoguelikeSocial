@@ -56,7 +56,7 @@ MonoBehaviour:
     AllowedRooms: 
     RequiresFurnitureNearby: 0
   - PropName: Mimic
-    Prefab: {fileID: 1577436447290420850, guid: 762fb831e5104304399199be79a3e338, type: 3}
+    Prefab: {fileID: 2531939753474985821, guid: 7a9fee893eddff24d87b7f37ac4f97bc, type: 3}
     PlacementRule: 0
     Weight: 60
     SpawnChance: 1

@@ -15,11 +15,11 @@ MonoBehaviour:
   cellSize: 4
   gridWidth: 50
   gridHeight: 50
-  currentBiome: {fileID: 11400000, guid: 55e731a90fac4804dba480018976e573, type: 2}
+  currentBiome: {fileID: 11400000, guid: 76113540f97bcc54fb47082d67ee3f60, type: 2}
   bossRoomMinCells: 5
   bossRoomMaxCells: 8
   dungeonDepth: 0
-  seed: 1482612492
+  seed: -914492736
   useRandomSeed: 1
   drawGizmos: 1
   logStats: 1
