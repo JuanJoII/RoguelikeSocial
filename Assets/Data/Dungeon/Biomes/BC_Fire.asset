@@ -14,11 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BiomeConfig
   BiomeName: 
   BiomeColor: {r: 0.54509807, g: 0.10693307, b: 0.10693307, a: 1}
-  floorRoom: {fileID: 4836326890926897161, guid: d40d8f20c8fa3ef468be4c3c6b523918, type: 3}
-  floorCorridor: {fileID: 4836326890926897161, guid: d40d8f20c8fa3ef468be4c3c6b523918, type: 3}
-  wallStraight: {fileID: 1845650961035216128, guid: b322d6f3a20d2e845b7d2d847803838d, type: 3}
-  doorNormal: {fileID: 6184559723131349883, guid: 11b8760b83dc5f545b3e38e3272b48e5, type: 3}
-  doorBoss: {fileID: 6184559723131349883, guid: 11b8760b83dc5f545b3e38e3272b48e5, type: 3}
+  floorRoom: {fileID: 1234103066334578210, guid: b67c439fc37a7494fa09da07323bd9a1, type: 3}
+  floorCorridor: {fileID: 1234103066334578210, guid: b67c439fc37a7494fa09da07323bd9a1, type: 3}
+  wallStraight: {fileID: 6295899830453436668, guid: 7b71b1d476979074d8eaa9f124998e13, type: 3}
+  doorNormal: {fileID: 7192825183450985900, guid: c9ccdb35f49be4a4e9972eb82be00eca, type: 3}
+  doorBoss: {fileID: 7192825183450985900, guid: c9ccdb35f49be4a4e9972eb82be00eca, type: 3}
   EnemyPool: {fileID: 11400000, guid: 09ec9bd0c375ab8488c96fcedf89aa11, type: 2}
   LootTable: {fileID: 11400000, guid: 1fb887228d4fb1642b45d2967dfd7003, type: 2}
   PropCollection: {fileID: 11400000, guid: 9cf101a0afac78b48a6c9806a0ac4738, type: 2}
